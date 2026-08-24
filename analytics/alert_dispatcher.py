@@ -47,7 +47,7 @@ class EmergencyAlertDispatcher:
             "coordinates_meters": location_coords,
             "vital_signs": vital_signs or {},
             "urgency": "CRITICAL",
-            "message": f"🚨 EMERGENCY: Human fall detected for {target_id} at position ({location_coords.get('x', 0):.2f}m, {location_coords.get('y', 0):.2f}m). Please check immediately!",
+            "message": f"EMERGENCY: Human fall detected for {target_id} at position ({location_coords.get('x', 0):.2f}m, {location_coords.get('y', 0):.2f}m). Please check immediately!",
         }
 
         logger.critical(f"[ALERT DISPATCHED] {json.dumps(payload)}")
