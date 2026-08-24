@@ -1,0 +1,17 @@
+# Core Deep Learning & Scientific Computing
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.24.0
+scipy>=1.10.0
+scikit-learn>=1.2.0
+
+# Asynchronous Web Services & Messaging
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+websockets>=11.0.3
+aiokafka>=0.8.1
+pyserial>=3.5
+
+# Utilities & Visualization
+tqdm>=4.65.0
+pydantic>=2.0.0

@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIT RF-Pose3D | Next-Gen Holographic Wi-Fi Radar & Vital Sensing</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- Chart.js for High-Precision Real-Time Vitals -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Google Fonts: Space Grotesk, Orbitron, JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            tech: ['Orbitron', 'monospace'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            sans: ['"Space Grotesk"', 'sans-serif'],
+          },
+          colors: {
+            cyber: {
+              cyan: '#00f0ff',
+              blue: '#0284c7',
+              emerald: '#10b981',
+              lime: '#a3e635',
+              rose: '#f43f5e',
+              amber: '#f59e0b',
+              dark: '#030712',
+              card: 'rgba(8, 14, 28, 0.82)'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    body {
+      background-color: #030712;
+      color: #f3f4f6;
+      overflow: hidden;
+    }
+    .hud-card {
+      background: rgba(6, 11, 25, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 240, 255, 0.18);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(0, 240, 255, 0.05);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .hud-card:hover {
+      border-color: rgba(0, 240, 255, 0.45);
+      box-shadow: 0 12px 40px 0 rgba(0, 240, 255, 0.15), inset 0 0 16px rgba(0, 240, 255, 0.08);
+    }
+    .radar-grid {
+      background-image: 
+        linear-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    .glow-text-cyan {
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
+    }
+    .glow-text-rose {
+      text-shadow: 0 0 10px rgba(244, 63, 94, 0.6), 0 0 20px rgba(244, 63, 94, 0.2);
+    }
+    .radar-sweep {
+      background: conic-gradient(from 0deg at 50% 50%, rgba(0, 240, 255, 0.35) 0deg, rgba(0, 240, 255, 0) 60deg, rgba(0, 240, 255, 0) 360deg);
+      animation: sweep 4s linear infinite;
+    }
+    @keyframes sweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .pulse-glow {
+      animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5); }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 240, 255, 0.3);
+      border-radius: 2px;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen relative font-sans">
+
+  <!-- TOP MIL-SPEC HUD HEADER -->
+  <header class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-3 hud-card border-t-0 border-x-0 rounded-none">
+    <!-- Brand & System Status -->
+    <div class="flex items-center space-x-4">
+      <div class="relative flex items-center justify-center">
+        <div class="w-3.5 h-3.5 rounded-full bg-cyber-cyan pulse-glow"></div>
+        <div class="absolute w-6 h-6 rounded-full border border-cyan-400/40 animate-ping"></div>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-tech text-xl font-extrabold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-cyan-400 to-blue-500 glow-text-cyan">
+            RF-SENSE3D QUANTUM
+          </h1>
+          <span class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-widest bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 rounded">
+            NLoS RADAR v3.4
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-400 font-mono tracking-tight">
+          Edge-Scalable Passive Wi-Fi CSI 3D Holographic Reconstruction Platform
+        </p>
+      </div>
+    </div>
+
+    <!-- Center Quick Telemetry Bar -->
+    <div class="hidden md:flex items-center space-x-8 bg-slate-950/60 px-5 py-1.5 rounded-full border border-cyan-900/50">
+      <div class="flex items-center space-x-2">
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Carrier:</span>
+        <span class="font-mono text-xs text-cyan-300 font-bold">2.412 GHz (Ch 1)</span>
+      </div>
+      <div class="w-px h-3 bg-slate-800"></div>
+      <div class="flex items-center space-x-2">
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Subcarriers:</span>
+        <span class="font-mono text-xs text-emerald-400 font-bold">64 OFDM / MIMO</span>
+      </div>
+      <div class="w-px h-3 bg-slate-800"></div>
+      <div class="flex items-center space-x-2">
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Throughput:</span>
+        <span class="font-mono text-xs text-cyan-300 font-bold">100.0 FPS</span>
+      </div>
+      <div class="w-px h-3 bg-slate-800"></div>
+      <div class="flex items-center space-x-2">
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Wall Loss:</span>
+        <span class="font-mono text-xs text-amber-400 font-bold">-14.2 dB (Concrete)</span>
+      </div>
+    </div>
+
+    <!-- Right Live Status & Latency Badge -->
+    <div class="flex items-center space-x-4">
+      <div class="text-right font-mono">
+        <span class="text-[10px] text-slate-400 block uppercase">Inference Engine</span>
+        <span id="latency-val" class="text-xs text-emerald-400 font-bold">4.8 ms (CUDA FP16)</span>
+      </div>
+      <div id="conn-badge" class="px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider bg-emerald-950/90 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-950 flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>RADAR ACTIVE</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN 3D THREE.JS VIEWPORT -->
+  <div id="threejs-container" class="w-full h-full absolute inset-0 z-0"></div>
+
+  <!-- LEFT HUD: TARGET TRACKING, RE-ID & 2D RADAR SCOPE -->
+  <aside class="absolute left-6 top-20 bottom-6 z-20 w-84 flex flex-col justify-between pointer-events-none space-y-3">
+    
+    <!-- Card 1: Primary Target Re-ID & Coordinates -->
+    <div class="hud-card rounded-2xl p-4.5 pointer-events-auto space-y-3">
+      <div class="flex items-center justify-between border-b border-cyan-900/40 pb-2.5">
+        <div class="flex items-center gap-2">
+          <div class="w-2.5 h-2.5 rounded-sm bg-cyan-400 shadow-md shadow-cyan-400"></div>
+          <h2 class="font-tech text-xs font-bold uppercase tracking-wider text-slate-200">
+            Target Identification
+          </h2>
+        </div>
+        <span id="target-id" class="font-tech text-xs font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-950 border border-cyan-800/60">
+          SUBJECT_01
+        </span>
+      </div>
+
+      <div class="space-y-2.5 text-xs">
+        <!-- Re-ID Confidence -->
+        <div>
+          <div class="flex justify-between items-center mb-1 font-mono text-[11px]">
+            <span class="text-slate-400">RF Signature Match</span>
+            <span id="reid-conf" class="text-emerald-400 font-bold">96.8% (ArcFace)</span>
+          </div>
+          <div class="w-full bg-slate-900/90 rounded-full h-2 overflow-hidden p-0.5 border border-slate-800">
+            <div id="reid-bar" class="bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-cyan-400" style="width: 96.8%;"></div>
+          </div>
+        </div>
+
+        <!-- 3D Spatial Coordinates -->
+        <div class="grid grid-cols-3 gap-1.5 pt-1 text-center font-mono">
+          <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80">
+            <span class="text-[10px] text-slate-400 block font-sans">Pos X</span>
+            <span id="coord-x" class="text-cyan-300 font-bold text-xs">+0.42 m</span>
+          </div>
+          <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80">
+            <span class="text-[10px] text-slate-400 block font-sans">Pos Y (Dist)</span>
+            <span id="coord-y" class="text-cyan-300 font-bold text-xs">+2.15 m</span>
+          </div>
+          <div class="bg-slate-950/80 p-2 rounded-lg border border-slate-800/80">
+            <span class="text-[10px] text-slate-400 block font-sans">Pos Z (Alt)</span>
+            <span id="coord-z" class="text-cyan-300 font-bold text-xs">+1.12 m</span>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center pt-1 text-[11px] font-mono border-t border-slate-800/50">
+          <span class="text-slate-400">Velocity Stride:</span>
+          <span id="target-speed" class="text-amber-300 font-bold">1.18 m/s</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: 2D Spatial Planar Radar Scope -->
+    <div class="hud-card rounded-2xl p-4 pointer-events-auto flex flex-col items-center space-y-2">
+      <div class="w-full flex items-center justify-between border-b border-cyan-900/40 pb-2">
+        <h3 class="font-tech text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a10 10 0 0 1 10 10"></path></svg>
+          2D Planar Radar Scope
+        </h3>
+        <span class="font-mono text-[10px] text-cyan-400">FOV 120°</span>
+      </div>
+
+      <!-- Circular Radar Sweep Screen -->
+      <div class="relative w-44 h-44 rounded-full border-2 border-cyan-500/40 overflow-hidden flex items-center justify-center bg-slate-950/90 shadow-inner">
+        <!-- Concentric Distance Rings -->
+        <div class="absolute w-36 h-36 rounded-full border border-cyan-500/20"></div>
+        <div class="absolute w-24 h-24 rounded-full border border-cyan-500/25"></div>
+        <div class="absolute w-12 h-12 rounded-full border border-cyan-500/30"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <div class="w-full h-px bg-cyan-500/20"></div>
+          <div class="h-full w-px bg-cyan-500/20 absolute"></div>
+        </div>
+        <!-- Sweep Sector Line -->
+        <div class="absolute inset-0 radar-sweep"></div>
+        <!-- Radar Target Blip -->
+        <div id="radar-blip" class="absolute w-3.5 h-3.5 rounded-full bg-cyan-300 shadow-lg shadow-cyan-400 animate-ping transition-all duration-300" style="top: 35%; left: 55%;"></div>
+        <div id="radar-blip-core" class="absolute w-2.5 h-2.5 rounded-full bg-cyan-400 border border-white transition-all duration-300" style="top: 36%; left: 56%;"></div>
+        <!-- Antenna Array Station Origin -->
+        <div class="absolute bottom-1 w-3 h-1.5 bg-rose-500 rounded-sm"></div>
+      </div>
+      <div class="w-full flex justify-between text-[10px] font-mono text-slate-400 px-2">
+        <span>Range: 5.0m</span>
+        <span>Rx Array: 3 Nodes</span>
+      </div>
+    </div>
+
+    <!-- Card 3: Physical Environment Stats -->
+    <div class="hud-card rounded-2xl p-3.5 pointer-events-auto space-y-2 text-xs">
+      <div class="flex justify-between items-center text-[11px] font-mono">
+        <span class="text-slate-400">RF Clutter Baseline:</span>
+        <span class="text-emerald-400 font-bold">-68.4 dBm (Filtered)</span>
+      </div>
+      <div class="flex justify-between items-center text-[11px] font-mono">
+        <span class="text-slate-400">Phase Sanitization:</span>
+        <span class="text-cyan-300 font-bold">0.00 Rad Residual Tilt</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- RIGHT HUD: CARDIOPULMONARY DYNAMICS & 3D AVATAR CONTROLS -->
+  <aside class="absolute right-6 top-20 bottom-6 z-20 w-88 flex flex-col justify-between pointer-events-none space-y-3">
+    
+    <!-- Card 1: Contactless Vital Signs (ECG & Respiration Waveform) -->
+    <div class="hud-card rounded-2xl p-4.5 pointer-events-auto space-y-3.5">
+      <div class="flex items-center justify-between border-b border-rose-900/40 pb-2.5">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-rose-500 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          <h2 class="font-tech text-xs font-bold uppercase tracking-wider text-slate-200">
+            Cardiopulmonary Vitals
+          </h2>
+        </div>
+        <span class="text-[10px] font-mono text-rose-400 bg-rose-950/80 px-2 py-0.5 rounded border border-rose-800/50">
+          MICRO-DOPPLER
+        </span>
+      </div>
+
+      <!-- Vitals Dual Gauge -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- Respiration -->
+        <div class="bg-gradient-to-br from-slate-950 to-cyan-950/40 p-3 rounded-xl border border-cyan-800/40 text-center relative overflow-hidden">
+          <span class="text-[11px] font-mono text-slate-400 block mb-0.5">Respiration</span>
+          <div class="flex items-baseline justify-center gap-1">
+            <span id="vital-resp" class="font-tech text-2xl font-black text-cyan-300 glow-text-cyan">16.2</span>
+            <span class="text-[10px] font-mono text-cyan-400">BrPM</span>
+          </div>
+          <span class="text-[9px] font-mono text-cyan-500/80 block mt-0.5">Norm: 12-20 BrPM</span>
+        </div>
+
+        <!-- Heart Rate -->
+        <div class="bg-gradient-to-br from-slate-950 to-rose-950/40 p-3 rounded-xl border border-rose-800/40 text-center relative overflow-hidden">
+          <span class="text-[11px] font-mono text-slate-400 block mb-0.5">Heart Rate</span>
+          <div class="flex items-baseline justify-center gap-1">
+            <span id="vital-heart" class="font-tech text-2xl font-black text-rose-400 glow-text-rose">72.4</span>
+            <span class="text-[10px] font-mono text-rose-400">BPM</span>
+          </div>
+          <span class="text-[9px] font-mono text-rose-500/80 block mt-0.5">Norm: 60-100 BPM</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Respiration Curve Canvas -->
+      <div class="space-y-1 bg-slate-950/90 p-2.5 rounded-xl border border-slate-800/90">
+        <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
+          <span class="flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            Chest Wall Waveform ($\Delta d \approx 4.2\,\text{mm}$)
+          </span>
+          <span class="text-cyan-400">0.27 Hz</span>
+        </div>
+        <canvas id="waveform-canvas" width="310" height="75" class="w-full h-[75px] rounded"></canvas>
+      </div>
+    </div>
+
+    <!-- Card 2: 3D Holographic Model & Shader Customizer -->
+    <div class="hud-card rounded-2xl p-4 pointer-events-auto space-y-3">
+      <div class="flex items-center justify-between border-b border-cyan-900/40 pb-2">
+        <h3 class="font-tech text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
+          <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+          3D Avatar Visualization
+        </h3>
+      </div>
+
+      <!-- Mesh Style Selector -->
+      <div class="space-y-1.5">
+        <span class="text-[11px] text-slate-400 font-mono block">Shader Mesh Mode:</span>
+        <div class="grid grid-cols-3 gap-1.5">
+          <button id="btn-style-avatar" class="px-2 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/60 text-xs font-tech font-semibold transition shadow-sm shadow-cyan-900">3D Body</button>
+          <button id="btn-style-wire" class="px-2 py-2 rounded-xl bg-slate-900/90 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-xs font-tech transition">Wireframe</button>
+          <button id="btn-style-skel" class="px-2 py-2 rounded-xl bg-slate-900/90 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-xs font-tech transition">Skeleton</button>
+        </div>
+      </div>
+
+      <!-- Kinematic Motion Postures -->
+      <div class="space-y-1.5 pt-1">
+        <span class="text-[11px] text-slate-400 font-mono block">Human Action Mode:</span>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button id="btn-motion-walk" class="px-2 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1">
+            <span>🚶</span> Walking Gait
+          </button>
+          <button id="btn-motion-wave" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
+            <span>🙋</span> Arm Gesture
+          </button>
+          <button id="btn-motion-sit" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
+            <span>🪑</span> Seated Vitals
+          </button>
+          <button id="btn-motion-multi" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
+            <span>👥</span> Dual Target
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 3: Camera Presets -->
+    <div class="hud-card rounded-2xl p-3.5 pointer-events-auto flex items-center justify-between text-xs">
+      <span class="text-slate-400 font-mono text-[11px]">Camera Angle:</span>
+      <div class="flex space-x-1.5">
+        <button id="btn-view-front" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[11px] font-mono transition">Front (2D)</button>
+        <button id="btn-view-top" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[11px] font-mono transition">Top Radar</button>
+        <button id="btn-view-iso" class="px-2.5 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition">3D Free Orbit</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- BOTTOM FOOTER LEGEND & INTERACTION TIPS -->
+  <footer class="absolute bottom-4 left-6 right-6 z-20 flex justify-between items-center pointer-events-none">
+    <div class="hud-card pointer-events-auto px-4 py-2 rounded-xl text-xs flex items-center space-x-6">
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-400"></span>
+        <span class="text-slate-300 font-mono text-[11px]">Cranial/Head (1 Node)</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block shadow-sm shadow-cyan-400"></span>
+        <span class="text-slate-300 font-mono text-[11px]">Torso & Arms (8 Joints)</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400"></span>
+        <span class="text-slate-300 font-mono text-[11px]">Lower Limbs (8 Joints)</span>
+      </div>
+    </div>
+
+    <div class="hud-card pointer-events-auto px-4 py-2 rounded-xl text-[11px] text-slate-400 font-mono flex items-center gap-2">
+      <span class="text-cyan-400">💡 Tip:</span>
+      <span>Left-Click Drag to Orbit 3D Scene | Scroll to Zoom | Right-Click to Pan</span>
+    </div>
+  </footer>
+
+  <!-- THREE.JS 3D ENGINE & SYSTEM CONTROLLER -->
+  <script>
+    // =========================================================================
+    // 1. Scene, Camera, High-Tech Lighting & Fog
+    // =========================================================================
+    const container = document.getElementById('threejs-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x030712, 0.04);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.8, 4.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 1.1, 0);
+    controls.maxPolarAngle = Math.PI / 2 + 0.05; // Don't flip under floor
+
+    // Atmospheric Sci-Fi Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.PointLight(0x00f0ff, 3.0, 25);
+    mainLight.position.set(0, 4, 3);
+    scene.add(mainLight);
+
+    const backRimLight = new THREE.DirectionalLight(0x3b82f6, 1.5);
+    backRimLight.position.set(0, 3, -4);
+    scene.add(backRimLight);
+
+    const heartPulsingLight = new THREE.PointLight(0xf43f5e, 2.0, 4);
+    scene.add(heartPulsingLight);
+
+    // =========================================================================
+    // 2. High-Tech Cyber Grid Floor & Laser Scan Line
+    // =========================================================================
+    const gridFloor = new THREE.GridHelper(14, 28, 0x00f0ff, 0x0f172a);
+    gridFloor.position.y = 0;
+    scene.add(gridFloor);
+
+    // Animated Laser Sweep Plane
+    const laserPlaneGeo = new THREE.PlaneGeometry(14, 0.08);
+    const laserPlaneMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const laserSweep = new THREE.Mesh(laserPlaneGeo, laserPlaneMat);
+    laserSweep.rotation.x = Math.PI / 2;
+    laserSweep.position.y = 0.01;
+    scene.add(laserSweep);
+
+    // Simulated 3-Antenna Wi-Fi Array Station in the back
+    const antennaGroup = new THREE.Group();
+    for (let i = -1; i <= 1; i++) {
+      const antMast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8 }));
+      const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+      antTip.position.y = 0.25;
+      const singleAnt = new THREE.Group();
+      singleAnt.add(antMast);
+      singleAnt.add(antTip);
+      singleAnt.position.set(i * 0.6, 0.25, -2.8);
+      antennaGroup.add(singleAnt);
+    }
+    scene.add(antennaGroup);
+
+    // =========================================================================
+    // 3. Volumetric Anatomical 3D Human Avatar Model
+    // =========================================================================
+    const avatarGroup = new THREE.Group();
+    scene.add(avatarGroup);
+
+    // Cyberpunk Translucent Body Shader Materials
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.6,
+      roughness: 0.15,
+      metalness: 0.85,
+      transparent: true,
+      opacity: 0.88
+    });
+
+    const headMat = new THREE.MeshStandardMaterial({
+      color: 0xfbbf24,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.8,
+      roughness: 0.2
+    });
+
+    const lowerLimbsMat = new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      emissive: 0x059669,
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.8
+    });
+
+    // Anatomical Body Segments
+    // Head & Visor
+    const headGroup = new THREE.Group();
+    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 32), headMat);
+    const visorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
+    visorMesh.position.set(0, 0.02, 0.07);
+    headGroup.add(headMesh);
+    headGroup.add(visorMesh);
+    avatarGroup.add(headGroup);
+
+    // Torso / Chest with Pulsing Heart Core
+    const chestGroup = new THREE.Group();
+    const chestMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.19, 0.48, 20), bodyMat);
+    const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+    heartCore.position.set(-0.04, 0.08, 0.05);
+    chestGroup.add(chestMesh);
+    chestGroup.add(heartCore);
+    avatarGroup.add(chestGroup);
+
+    // Pelvis
+    const pelvisMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.17, 0.22, 20), bodyMat);
+    avatarGroup.add(pelvisMesh);
+
+    // Limb Segment Builder
+    function buildLimb(radiusTop, radiusBottom, length, mat) {
+      const g = new THREE.Group();
+      const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 20);
+      geom.translate(0, -length / 2, 0); // Pivot joint
+      const m = new THREE.Mesh(geom, mat);
+      const jointBall = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
+      g.add(m);
+      g.add(jointBall);
+      avatarGroup.add(g);
+      return g;
+    }
+
+    const leftUpperArm = buildLimb(0.065, 0.055, 0.32, bodyMat);
+    const rightUpperArm = buildLimb(0.065, 0.055, 0.32, bodyMat);
+    const leftForearm = buildLimb(0.055, 0.045, 0.30, bodyMat);
+    const rightForearm = buildLimb(0.055, 0.045, 0.30, bodyMat);
+
+    const leftThigh = buildLimb(0.095, 0.075, 0.44, lowerLimbsMat);
+    const rightThigh = buildLimb(0.095, 0.075, 0.44, lowerLimbsMat);
+    const leftCalf = buildLimb(0.075, 0.06, 0.44, lowerLimbsMat);
+    const rightCalf = buildLimb(0.075, 0.06, 0.44, lowerLimbsMat);
+
+    // Kinematic Skeleton Node Spheres & Connecting Bones
+    const COCO_BONES = [
+      [0, 1], [0, 2], [1, 3], [2, 4],             // Head
+      [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],    // Upper Body
+      [5, 11], [6, 12], [11, 12],                 // Torso
+      [11, 13], [13, 15], [12, 14], [14, 16]      // Lower Body
+    ];
+
+    const jointMeshes = [];
+    const boneMeshes = [];
+    const jointGeo = new THREE.SphereGeometry(0.04, 16, 16);
+    const jointMaterial = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
+
+    for (let i = 0; i < 17; i++) {
+      const jm = new THREE.Mesh(jointGeo, jointMaterial);
+      avatarGroup.add(jm);
+      jointMeshes.push(jm);
+    }
+
+    const boneGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.0, 12);
+    COCO_BONES.forEach(() => {
+      const bm = new THREE.Mesh(boneGeo, new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6 }));
+      avatarGroup.add(bm);
+      boneMeshes.push(bm);
+    });
+
+    // Holographic Target Tracking Reticle Disc on Ground
+    const discGeo = new THREE.RingGeometry(0.15, 0.85, 32);
+    const discMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+    const groundDisc = new THREE.Mesh(discGeo, discMat);
+    groundDisc.rotation.x = -Math.PI / 2;
+    groundDisc.position.y = 0.02;
+    scene.add(groundDisc);
+
+    // Bounding Box Wireframe around Subject
+    const bboxGeo = new THREE.BoxGeometry(1.0, 1.9, 0.8);
+    const bboxMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.25 });
+    const bboxMesh = new THREE.Mesh(bboxGeo, bboxMat);
+    bboxMesh.position.y = 1.0;
+    scene.add(bboxMesh);
+
+    function positionLimbGroup(group, pStart, pEnd) {
+      group.position.copy(pStart);
+      const dir = new THREE.Vector3().subVectors(pEnd, pStart);
+      const len = dir.length();
+      group.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize());
+      group.scale.set(1, len / 0.32, 1);
+    }
+
+    function updateHumanAvatarPose(kpts) {
+      if (!kpts || kpts.length !== 17) return;
+
+      const p = kpts.map(([x, y, z]) => new THREE.Vector3(x, z + 1.15, y));
+
+      // 1. Joint Nodes
+      for (let i = 0; i < 17; i++) {
+        jointMeshes[i].position.copy(p[i]);
+      }
+
+      // 2. Bones
+      COCO_BONES.forEach(([j1, j2], idx) => {
+        const p1 = p[j1];
+        const p2 = p[j2];
+        const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+        const distance = Math.max(p1.distanceTo(p2), 0.05);
+
+        boneMeshes[idx].position.copy(midpoint);
+        boneMeshes[idx].scale.set(1, distance, 1);
+        boneMeshes[idx].quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(p2, p1).normalize());
+      });
+
+      // 3. Volumetric Anatomical Body Parts
+      headGroup.position.copy(p[0]); // Head center
+
+      const midShoulder = new THREE.Vector3().addVectors(p[5], p[6]).multiplyScalar(0.5);
+      const midHip = new THREE.Vector3().addVectors(p[11], p[12]).multiplyScalar(0.5);
+
+      chestGroup.position.copy(new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5));
+      const torsoDir = new THREE.Vector3().subVectors(midShoulder, midHip);
+      chestGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
+
+      pelvisMesh.position.copy(midHip);
+
+      positionLimbGroup(leftUpperArm, p[5], p[7]);
+      positionLimbGroup(leftForearm, p[7], p[9]);
+      positionLimbGroup(rightUpperArm, p[6], p[8]);
+      positionLimbGroup(rightForearm, p[8], p[10]);
+
+      positionLimbGroup(leftThigh, p[11], p[13]);
+      positionLimbGroup(leftCalf, p[13], p[15]);
+      positionLimbGroup(rightThigh, p[12], p[14]);
+      positionLimbGroup(rightCalf, p[14], p[16]);
+
+      // Ground Disc & Bounding Box
+      groundDisc.position.set(midHip.x, 0.02, midHip.z);
+      bboxMesh.position.set(midHip.x, 1.0, midHip.z);
+
+      // Heart Light Position
+      heartPulsingLight.position.copy(chestGroup.position);
+    }
+
+    // =========================================================================
+    // 4. Real-Time Respiration & Heartbeat Canvas Waveform
+    // =========================================================================
+    const waveCanvas = document.getElementById('waveform-canvas');
+    const waveCtx = waveCanvas.getContext('2d');
+    const waveHistory = new Array(140).fill(0);
+
+    function drawWaveform(newVal) {
+      waveHistory.push(newVal);
+      waveHistory.shift();
+
+      waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+
+      // Grid Lines
+      waveCtx.strokeStyle = 'rgba(0, 240, 255, 0.1)';
+      waveCtx.lineWidth = 1;
+      waveCtx.beginPath();
+      for (let y = 15; y < waveCanvas.height; y += 15) {
+        waveCtx.moveTo(0, y);
+        waveCtx.lineTo(waveCanvas.width, y);
+      }
+      waveCtx.stroke();
+
+      // Glowing Cyan Waveform Curve
+      waveCtx.strokeStyle = '#00f0ff';
+      waveCtx.lineWidth = 2.5;
+      waveCtx.shadowColor = '#00f0ff';
+      waveCtx.shadowBlur = 10;
+      waveCtx.beginPath();
+
+      const step = waveCanvas.width / (waveHistory.length - 1);
+      const centerY = waveCanvas.height / 2;
+
+      for (let i = 0; i < waveHistory.length; i++) {
+        const x = i * step;
+        const y = centerY - waveHistory[i] * 22;
+        if (i === 0) waveCtx.moveTo(x, y);
+        else waveCtx.lineTo(x, y);
+      }
+      waveCtx.stroke();
+      waveCtx.shadowBlur = 0; // reset
+    }
+
+    // =========================================================================
+    // 5. Radar Blip & Telemetry Synchronization
+    // =========================================================================
+    const radarBlip = document.getElementById('radar-blip');
+    const radarBlipCore = document.getElementById('radar-blip-core');
+    const coordXEl = document.getElementById('coord-x');
+    const coordYEl = document.getElementById('coord-y');
+    const coordZEl = document.getElementById('coord-z');
+    const targetSpeedEl = document.getElementById('target-speed');
+    const vitalRespEl = document.getElementById('vital-resp');
+    const vitalHeartEl = document.getElementById('vital-heart');
+    const latencyEl = document.getElementById('latency-val');
+    const targetIdEl = document.getElementById('target-id');
+    const reidConfEl = document.getElementById('reid-conf');
+    const reidBarEl = document.getElementById('reid-bar');
+
+    function updateRadarScope(x, y) {
+      // Map world coords [-2.5, 2.5] -> Radar Scope %
+      const pctX = 50 + (x / 3.0) * 40;
+      const pctY = 50 - (y / 4.0) * 35;
+      radarBlip.style.left = `${pctX}%`;
+      radarBlip.style.top = `${pctY}%`;
+      radarBlipCore.style.left = `${pctX}%`;
+      radarBlipCore.style.top = `${pctY}%`;
+    }
+
+    // =========================================================================
+    // 6. Interactive Styles & Motion Postures
+    // =========================================================================
+    const btnStyleAvatar = document.getElementById('btn-style-avatar');
+    const btnStyleWire = document.getElementById('btn-style-wire');
+    const btnStyleSkel = document.getElementById('btn-style-skel');
+
+    function setActiveStyle(btn) {
+      [btnStyleAvatar, btnStyleWire, btnStyleSkel].forEach(b => {
+        b.className = 'px-2 py-2 rounded-xl bg-slate-900/90 text-slate-300 border border-slate-700 text-xs font-tech transition';
+      });
+      btn.className = 'px-2 py-2 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-500/60 text-xs font-tech font-semibold transition shadow-sm shadow-cyan-900';
+    }
+
+    btnStyleAvatar.onclick = () => {
+      setActiveStyle(btnStyleAvatar);
+      bodyMat.wireframe = false;
+      bodyMat.opacity = 0.88;
+      headGroup.visible = true;
+      chestGroup.visible = true;
+      pelvisMesh.visible = true;
+      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
+    };
+
+    btnStyleWire.onclick = () => {
+      setActiveStyle(btnStyleWire);
+      bodyMat.wireframe = true;
+      bodyMat.opacity = 0.5;
+      headGroup.visible = true;
+      chestGroup.visible = true;
+      pelvisMesh.visible = true;
+      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
+    };
+
+    btnStyleSkel.onclick = () => {
+      setActiveStyle(btnStyleSkel);
+      headGroup.visible = false;
+      chestGroup.visible = false;
+      pelvisMesh.visible = false;
+      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = false);
+    };
+
+    // Action Modes
+    let motionMode = 'walk';
+    const btnWalk = document.getElementById('btn-motion-walk');
+    const btnWave = document.getElementById('btn-motion-wave');
+    const btnSit = document.getElementById('btn-motion-sit');
+    const btnMulti = document.getElementById('btn-motion-multi');
+
+    function setActiveMotion(btn) {
+      [btnWalk, btnWave, btnSit, btnMulti].forEach(b => {
+        b.className = 'px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1';
+      });
+      btn.className = 'px-2 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1 shadow-sm shadow-cyan-950';
+    }
+
+    btnWalk.onclick = () => { motionMode = 'walk'; setActiveMotion(btnWalk); targetIdEl.textContent = 'SUBJECT_01 (WALK)'; targetSpeedEl.textContent = '1.24 m/s'; };
+    btnWave.onclick = () => { motionMode = 'wave'; setActiveMotion(btnWave); targetIdEl.textContent = 'SUBJECT_01 (GESTURE)'; targetSpeedEl.textContent = '0.35 m/s'; };
+    btnSit.onclick = () => { motionMode = 'sit'; setActiveMotion(btnSit); targetIdEl.textContent = 'SUBJECT_01 (SEATED)'; targetSpeedEl.textContent = '0.00 m/s'; };
+    btnMulti.onclick = () => { motionMode = 'multi'; setActiveMotion(btnMulti); targetIdEl.textContent = 'DUAL_TRACK_ACTIVE'; targetSpeedEl.textContent = '1.45 m/s'; };
+
+    // Camera Views
+    document.getElementById('btn-view-front').onclick = () => {
+      camera.position.set(0, 1.4, 4.0);
+      controls.target.set(0, 1.1, 0);
+    };
+    document.getElementById('btn-view-top').onclick = () => {
+      camera.position.set(0, 5.5, 0.05);
+      controls.target.set(0, 0, 0);
+    };
+    document.getElementById('btn-view-iso').onclick = () => {
+      camera.position.set(2.4, 2.2, 3.4);
+      controls.target.set(0, 1.1, 0);
+    };
+
+    // =========================================================================
+    // 7. Continuous Kinematics Simulation Loop
+    // =========================================================================
+    let simTime = 0;
+    function animateSimulation() {
+      simTime += 0.035;
+
+      // Laser sweep animation on floor
+      laserSweep.position.z = 3.5 * Math.sin(simTime * 0.5);
+
+      // Heartbeat pulse intensity
+      const heartPulse = (Math.sin(simTime * 7.5) + 1.0) * 0.5;
+      heartPulsingLight.intensity = 1.0 + 2.5 * heartPulse;
+      heartCore.scale.setScalar(1.0 + 0.3 * heartPulse);
+
+      let cx = 0, cy = 0, cz = 0;
+      let leftArm = 0, rightArm = 0;
+      let leftLeg = 0, rightLeg = 0;
+
+      if (motionMode === 'walk') {
+        cx = 0.65 * Math.sin(simTime * 0.8);
+        cy = 0.35 * Math.cos(simTime * 0.8);
+        cz = 0.06 * Math.sin(simTime * 1.6);
+        leftArm = 0.22 * Math.sin(simTime * 2);
+        rightArm = -0.22 * Math.sin(simTime * 2);
+        leftLeg = 0.22 * Math.cos(simTime * 2);
+        rightLeg = -0.22 * Math.cos(simTime * 2);
+      } else if (motionMode === 'wave') {
+        rightArm = 0.45 * Math.sin(simTime * 4.5); // Fast waving
+        cz = 0.02 * Math.sin(simTime * 1.5);
+      } else if (motionMode === 'sit') {
+        cz = -0.32; // Seated posture
+        leftLeg = 0.35;
+        rightLeg = 0.35;
+      } else if (motionMode === 'multi') {
+        cx = 0.85 * Math.sin(simTime * 1.2);
+        cy = 0.45 * Math.cos(simTime * 1.2);
+      }
+
+      // Update Coordinates Display
+      coordXEl.textContent = `${cx >= 0 ? '+' : ''}${cx.toFixed(2)} m`;
+      coordYEl.textContent = `+${(2.0 + cy).toFixed(2)} m`;
+      coordZEl.textContent = `+${(1.15 + cz).toFixed(2)} m`;
+      updateRadarScope(cx, 2.0 + cy);
+
+      // Chest Breathing Micro-Expansion
+      const breathingPhase = Math.sin(simTime * 1.7);
+      chestMesh.scale.set(1.0 + 0.05 * breathingPhase, 1.0, 1.0 + 0.08 * breathingPhase);
+
+      const basePose = [
+        [0.0 + cx, 0.0 + cy, 0.62 + cz],                     // 0: Head
+        [-0.08 + cx, 0.0 + cy, 0.67 + cz], [0.08 + cx, 0.0 + cy, 0.67 + cz], // 1, 2: Eyes
+        [-0.14 + cx, 0.0 + cy, 0.62 + cz], [0.14 + cx, 0.0 + cy, 0.62 + cz], // 3, 4: Ears
+        [-0.28 + cx, 0.0 + cy, 0.44 + cz], [0.28 + cx, 0.0 + cy, 0.44 + cz], // 5, 6: Shoulders
+        [-0.35 + cx + leftArm, 0.1 + cy, 0.18 + cz],        // 7: L Elbow
+        [0.35 + cx + rightArm, -0.1 + cy + (motionMode === 'wave' ? 0.38 : 0), 0.18 + cz + (motionMode === 'wave' ? 0.32 : 0)], // 8: R Elbow
+        [-0.42 + cx + leftArm * 1.5, 0.2 + cy, -0.08 + cz], // 9: L Wrist
+        [0.42 + cx + rightArm * 1.5, -0.2 + cy + (motionMode === 'wave' ? 0.45 : 0), -0.08 + cz + (motionMode === 'wave' ? 0.48 : 0)], // 10: R Wrist
+        [-0.17 + cx, 0.0 + cy, 0.0 + cz], [0.17 + cx, 0.0 + cy, 0.0 + cz],   // 11, 12: Hips
+        [-0.18 + cx + leftLeg, 0.1 + cy, -0.46 + cz],       // 13: L Knee
+        [0.18 + cx + rightLeg, -0.1 + cy, -0.46 + cz],      // 14: R Knee
+        [-0.18 + cx + leftLeg * 1.5, 0.2 + cy, -0.92 + cz], // 15: L Ankle
+        [0.18 + cx + rightLeg * 1.5, -0.2 + cy, -0.92 + cz],// 16: R Ankle
+      ];
+
+      updateHumanAvatarPose(basePose);
+      drawWaveform(breathingPhase);
+    }
+
+    // =========================================================================
+    // 8. WebSocket Connection Loop with Resilient Fallback
+    // =========================================================================
+    let ws;
+    function initWebSocket() {
+      const wsUrl = `ws://${window.location.host}/ws/rf_skeleton_feed`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('conn-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>RADAR LIVE (WS)</span>';
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.vital_signs) {
+            vitalRespEl.textContent = data.vital_signs.respiration_rate_brpm.toFixed(1);
+            vitalHeartEl.textContent = data.vital_signs.heart_rate_bpm.toFixed(1);
+          }
+          if (data.latency_ms) {
+            latencyEl.textContent = `${data.latency_ms} ms (CUDA FP16)`;
+          }
+        } catch (e) {}
+      };
+
+      ws.onclose = () => {
+        document.getElementById('conn-badge').innerHTML = '<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span><span>SIMULATOR LIVE</span>';
+        setTimeout(initWebSocket, 4000);
+      };
+    }
+    initWebSocket();
+
+    // =========================================================================
+    // 9. Main Animation Render Loop
+    // =========================================================================
+    function renderLoop() {
+      requestAnimationFrame(renderLoop);
+      controls.update();
+      animateSimulation();
+      renderer.render(scene, camera);
+    }
+    renderLoop();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
