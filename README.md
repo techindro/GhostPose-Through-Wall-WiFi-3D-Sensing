@@ -142,30 +142,53 @@ If you want to explore the foundational research literature, video demonstration
 
 ## Mathematical Formulations & Physics Foundation
 
-### 1. CSI Phase Linear Sanitization
-Raw Channel State Information measured on subcarrier $k$ suffers from random phase errors due to Carrier Frequency Offset (CFO) and Packet Detection Delay / Sampling Frequency Offset (SFO):
+### 1. CSI Phase Linear Sanitization (Hardware Noise Removal)
+Raw Channel State Information measured on subcarrier $k$ suffers from random phase errors due to hardware clock desynchronization (Carrier Frequency Offset $\beta$ and Sampling Frequency Offset tilt $\delta$):
 
 $$\tilde{\phi}_k = \phi_k - \frac{2\pi k}{N} \delta + \beta + Z$$
 
-Where $\phi_k$ is the true phase, $\delta$ is the time delay tilt, $\beta$ is the constant phase offset, and $Z$ is measurement noise. We eliminate the linear phase slope across subcarriers $[-32, 31]$ using least-squares linear regression:
+* **$\tilde{\phi}_k$**: Raw measured phase on subcarrier index $k$ (noisy input).
+* **$\phi_k$**: True physical phase reflected from the human subject (desired signal).
+* **$-\frac{2\pi k}{N} \delta$**: Linear phase tilt caused by packet detection time delay ($\delta$).
+* **$\beta$**: Random constant phase jump caused by receiver/transmitter frequency mismatch (CFO).
+* **$Z$**: Additive thermal measurement noise.
+
+**Calibration Formula (Least-Squares Phase Detrending)**:
+We estimate the linear slope $a$ and offset $b$ across all 64 subcarriers and subtract them to restore the clean, untwisted phase:
 
 $$\hat{\phi}_k = \tilde{\phi}_k - a \cdot k - b$$
 
 $$\text{where } a = \frac{\sum_{k=1}^N (k - \bar{k})(\tilde{\phi}_k - \bar{\phi})}{\sum_{k=1}^N (k - \bar{k})^2}, \quad b = \bar{\phi} - a\bar{k}$$
 
-### 2. Micro-Doppler & Chest Wall Kinematics
-Human motion induces a Doppler frequency shift $f_D(t)$ proportional to radial velocity $v_r(t)$:
+---
+
+### 2. Micro-Doppler & Contactless Vital Signs (Breathing & Heart Rate)
+When a human body or chest wall moves, it induces a frequency shift (Doppler Effect) in the reflected Wi-Fi signals proportional to the velocity $v_r(t)$:
 
 $$f_D(t) = \frac{2 v_r(t)}{\lambda} = \frac{2 f_c}{c} \frac{d}{dt} d(t)$$
 
-Respiration induces micrometric chest wall displacements $\Delta d(t) \approx 0.2 - 0.5\,\text{cm}$, modulating the subcarrier phase variance in the $0.1 - 0.45\,\text{Hz}$ frequency band.
+* **$f_D(t)$**: Doppler frequency shift in Hz (e.g., $0.1 - 0.45\,\text{Hz}$ for respiration, $0.8 - 2.5\,\text{Hz}$ for heartbeat).
+* **$v_r(t)$**: Radial velocity of the chest wall displacement $\frac{d}{dt} d(t)$.
+* **$\lambda$**: Wi-Fi wavelength ($\approx 12.5\,\text{cm}$ at $2.4\,\text{GHz}$ carrier frequency $f_c$).
+* **$c$**: Speed of light ($3 \times 10^8\,\text{m/s}$).
 
-### 3. Kinematic Multi-Task Loss Function
-The neural network optimizes a joint loss comprising 3D keypoint regression, ArcFace identity discrimination, and anatomical bone-length geometric consistency:
+*Intuitive Meaning: Even a $0.2\,\text{cm}$ micrometric chest wall expansion during breathing shifts the Wi-Fi carrier phase, allowing contactless vital signs extraction without any wearable sensors.*
+
+---
+
+### 3. Kinematic Bone-Length Consistency Loss (Realistic 3D Body Constraints)
+To prevent the deep neural network from predicting physically impossible poses (e.g., stretched arms or rubbery warped limbs), a geometric bone-length loss regularizes the training:
 
 $$\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{SmoothL1}}(\hat{\mathbf{P}}, \mathbf{P}) + \lambda_{\text{bone}} \mathcal{L}_{\text{kinematic}} + \lambda_{\text{reid}} \mathcal{L}_{\text{ArcFace}} + \lambda_{\text{vital}} \mathcal{L}_{\text{vital}}$$
 
 $$\mathcal{L}_{\text{kinematic}} = \sum_{(i, j) \in \mathcal{B}} \left| \|\hat{\mathbf{p}}_i - \hat{\mathbf{p}}_j\|_2 - L_{ij}^{(0)} \right|^2$$
+
+* **$\hat{\mathbf{p}}_i, \hat{\mathbf{p}}_j$**: Predicted 3D coordinates $(x, y, z)$ of adjacent skeletal joints (e.g., Shoulder to Elbow).
+* **$\|\hat{\mathbf{p}}_i - \hat{\mathbf{p}}_j\|_2$**: Predicted Euclidean distance (bone length) between joint $i$ and joint $j$.
+* **$L_{ij}^{(0)}$**: Anthropometric natural baseline length of that specific human bone.
+* **$\mathcal{B}$**: Set of all 16 connected anatomical human bones (COCO skeleton graph).
+
+*Intuitive Meaning: Penalizes any deformation where predicted limb lengths deviate from realistic human proportions.*
 
 ---
 
