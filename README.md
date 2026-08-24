@@ -1,12 +1,5 @@
 # RF-Sense3D: Edge-Scalable Through-the-Wall Wi-Fi Sensing System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg?logo=python&logoColor=white)](https://python.org)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org)
-[![Hardware](https://img.shields.io/badge/Hardware-ESP32%20(802.11%20OFDM)-E7352C.svg?logo=espressif&logoColor=white)](https://espressif.com)
-[![Three.js](https://img.shields.io/badge/WebGL-Three.js%203D-000000.svg?logo=threedotjs&logoColor=white)](https://threejs.org)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20ASGI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-
 A production-grade, hardware-agnostic architecture for **Passive Through-the-Wall Human Sensing**, **3D Skeleton Reconstruction**, and **Contactless Vital Signs Monitoring** using raw Wi-Fi Channel State Information (CSI) or RF raw payloads, completely bypassing the need for wearable sensors or optical cameras.
 
 > *Inspired by the foundational RF-Pose & RF-Pose3D research principles (Zhao et al., MIT CSAIL).*
@@ -15,13 +8,13 @@ A production-grade, hardware-agnostic architecture for **Passive Through-the-Wal
 
 ---
 
-## 🛠️ Complete Technology Stack
+## Technology Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           RF-SENSE3D ECOSYSTEM                          │
 ├───────────────────┬────────────────────────────┬────────────────────────┤
-│  EMBEDDED & PHY   │   DSP & DEEP LEARNING AI   │   BACKEND & 3D UI/UX   │
+│  EMBEDDED & PHY   │   DSP & DEEP LEARNING      │   BACKEND & 3D UI/UX   │
 ├───────────────────┼────────────────────────────┼────────────────────────┤
 │ • C++ / Arduino   │ • PyTorch (CUDA FP16)      │ • FastAPI & WebSockets │
 │ • ESP-IDF CSI API │ • SciPy & NumPy DSP        │ • Three.js (WebGL 3D)  │
@@ -46,7 +39,7 @@ A production-grade, hardware-agnostic architecture for **Passive Through-the-Wal
   * **Cardiac Filter**: $0.8 - 2.5\,\text{Hz}$ (Micro-Doppler heart rate harmonics: $48 - 150\,\text{BPM}$).
 * **1D/2D FFT & Doppler Spectrograms**: Real-time extraction of micro-Doppler velocity shifts and spectrogram energy waterfalls.
 
-### 3. Deep Learning & Kinematic AI Architecture
+### 3. Deep Learning & Kinematic Architecture
 * **PyTorch (CUDA Accelerated)**: GPU FP16 mixed-precision tensor processing engine running at **100+ FPS**.
 * **Spatio-Temporal Conv2D+1D Residual Network**: Factorized spatial and temporal convolutional blocks preserving spatial subcarrier correlations and motion temporal dynamics.
 * **Temporal Self-Attention Transformers**: Multi-head self-attention layers to model long-range human movement trajectories and complex body interactions.
@@ -80,7 +73,7 @@ A production-grade, hardware-agnostic architecture for **Passive Through-the-Wal
 
 ---
 
-## 🔬 System Architecture & Physical Pipeline
+## System Architecture & Physical Pipeline
 
 ![RF-Sense3D Technical Architecture](assets/images/rf_pose_architecture_diagram.jpg)
 
@@ -91,7 +84,7 @@ The system operates across three fundamental layers:
 
 ---
 
-## 🌐 Research References & Public Wi-Fi Datasets
+## Research References & Public Wi-Fi Datasets
 
 If you want to explore the foundational research literature, video demonstrations, or benchmark on public datasets:
 
@@ -100,80 +93,74 @@ If you want to explore the foundational research literature, video demonstration
 | **MIT CSAIL RF-Pose Research** | [http://rfpose.csail.mit.edu/](http://rfpose.csail.mit.edu/) | Landmark research paper on through-wall human pose estimation (CVPR). |
 | **MIT RF-Pose3D Research** | [http://rfpose3d.csail.mit.edu/](http://rfpose3d.csail.mit.edu/) | 3D human pose reconstruction literature from radio frequency signals (SIGCOMM). |
 | **Tsinghua University Widar 3.0** | [http://tns.thss.tsinghua.edu.cn/widar3.0/](http://tns.thss.tsinghua.edu.cn/widar3.0/) | Large open-source Wi-Fi CSI human sensing dataset for walking gaits and tracking. |
-| **Espressif Official ESP-CSI** | [https://github.com/espressif/esp-csi](https://github.com/espressif/esp-csi) | Official Espressif framework and dataset for human presence detection using ESP32. |
+| **IEEE Xplore Wi-Fi Sensing Papers** | [https://ieeexplore.ieee.org/](https://ieeexplore.ieee.org/) | Comprehensive IEEE transactions and journals on 802.11 CSI sensing. |
 | **CSI-Bench Benchmark Suite** | [https://github.com/geek-ai/csi-bench](https://github.com/geek-ai/csi-bench) | Deep learning benchmarking suite on raw Wi-Fi CSI data. |
 
 ---
 
-## Key Capabilities
-
-1. **Through-Wall 3D Skeleton Estimation**: Reconstructs 17 COCO 3D kinematic human stick figures and volumetric avatars in real-time behind concrete walls.
-2. **Device-Free Multi-Person Tracking & Re-ID**: Simultaneously tracks multiple distinct human targets (Subject #1 & Subject #2), preventing identity swaps with ArcFace metric learning and 3D Kalman filtering.
-3. **Real-Time Emergency Fall Detection & Dispatcher**: Bio-kinematic state machine calculating vertical velocity drop ($\frac{dz}{dt} < -1.4\,\text{m/s}$) and bounding-box aspect ratio inversion to trigger immediate visual strobe and audio alarms within $150\,\text{ms}$.
-4. **Contactless Vital Signs Monitoring**: Micro-Doppler phase shift analysis to compute respiration rate (BrPM) and heart rate variations (BPM).
-5. **Micro-Doppler Time-Frequency Spectrogram**: Animated energy waterfall tracking human locomotion Doppler frequencies ($\pm 15\,\text{Hz}$).
-6. **Lighting & NLoS Invariance**: Fully functional in total darkness, smoke, and non-line-of-sight environments.
-7. **Cross-Modal Teacher-Student Architecture**: Supervised by vision teacher networks (OpenPose/DensePose) with knowledge distillation into a Spatio-Temporal RF Student Network.
-
----
-
-## Directory Structure
+## Repository Structure
 
 ```
-Wi-Fi-Sensing-ESP32-/
+.
 ├── assets/
-│   └── images/                      # Architecture diagrams & UI screenshots
-├── main.py                          # Universal CLI controller (Dashboard, Training, Tests)
-├── run_tests.py                     # Universal test runner
-├── start.bat                        # One-click Windows dashboard launcher
+│   └── images/
+│       ├── rf_pose_dashboard_ui.jpg         # 3D Dashboard User Interface
+│       └── rf_pose_architecture_diagram.jpg # End-to-End System Blueprint
+├── main.py                                  # Universal CLI controller (Dashboard, Training, Tests)
+├── run_tests.py                             # Automated Test Runner
+├── start.bat                                # Windows One-Click Quick Launch
 ├── analytics/
 │   ├── dashboard/
-│   │   └── index.html               # Three.js 3D Skeleton & Vitals Dashboard
+│   │   └── index.html                       # Three.js 3D Skeleton & Vitals Dashboard
+│   ├── rf_pose_model.py                     # PyTorch Neural Network & Multi-Task Loss
+│   ├── dsp_pipeline.py                      # Phase Sanitization & Butterworth Filter
+│   ├── fall_detection_engine.py             # Kinematic Fall Detection State Machine
+│   ├── alert_dispatcher.py                  # Emergency Webhook & Telegram Dispatcher
+│   ├── multi_target_tracker.py              # Kalman Filter & ArcFace Re-ID Association
+│   ├── kafka_inference_service.py           # Real-Time WebSocket & Inference Server
+│   ├── vision_teacher.py                    # Cross-Modal Knowledge Distillation
+│   ├── spatial_filter.py                    # Multipath Ghost & ROI Filter
+│   ├── analytics_store.py                   # Health Metrics & Telemetry Database
+│   ├── auth_security.py                     # OAuth 2.0 & Token Authentication
+│   ├── train_rf_pose.py                     # Deep Learning Model Training Engine
+│   ├── train_model.py                       # Unified Model Trainer
 │   ├── tests/
-│   │   └── test_rf_pipeline.py      # Unit & Latency Benchmark Tests
-│   ├── rf_signal_processor.py       # DSP, Phase Sanitization & Filter Banks
-│   ├── rf_pose_model.py             # PyTorch RFStudentNetwork & Multi-Task Loss
-│   ├── multi_target_tracker.py      # 3D Kalman Filter + Hungarian Re-ID Anti-Swap Tracker
-│   ├── vision_teacher_network.py    # Cross-Modal 3D ResNet/OpenPose Vision Teacher & KD Loss
-│   ├── roi_masking.py               # 3D Spatial Region-of-Interest & Multipath Ghost Filter
-│   ├── auth_security.py             # OAuth 2.0 Bearer JWT Authentication & Captcha Verification
-│   ├── analytics_store.py           # Supabase & Time-Series Telemetry Persistence Gateway
-│   ├── train_rf_pose.py             # Deep Learning Model Training & Evaluation Engine
-│   ├── train_model.py               # Unified Trainer (Deep Learning + Classical Presence)
-│   ├── kafka_inference_service.py   # Async FastAPI & Kafka/WebSocket Server
-│   ├── rf_stream_simulator.py       # Synthetic RF-CSI Physics Generator
-│   ├── serial_to_kafka_bridge.py    # ESP32 Serial to Kafka/WebSocket Bridge
-│   ├── data_collector.py            # Dataset Recording CLI
-│   └── requirements.txt             # Python Dependencies
+│   │   └── test_rf_pipeline.py              # Unit & Integration Test Suite
+│   └── requirements.txt                     # Backend Dependencies
 ├── firmware/
-│   ├── transmitter/
-│   └── receiver/
-├── k8s/
-│   └── rf-pose-deployment.yaml      # Kubernetes GPU Deployment Manifest (nvidia.com/gpu: 1)
-├── Dockerfile                       # GPU Container Definition
-├── docker-compose.yml               # Kafka, Zookeeper & Inference Orchestration
-└── LICENSE                          # MIT Open Source License
+│   ├── esp32_csi_node/                      # ESP-IDF Production Firmware
+│   ├── transmitter.ino                      # ESP32 Frame Transmitter Firmware
+│   └── receiver.ino                         # ESP32 Serial Packet Streaming Firmware
+├── k8s/                                     # Kubernetes Deployment Configs
+├── docker-compose.yml                       # Multi-Container Deployment (Kafka + Service)
+├── Dockerfile                               # GPU Container Definition
+├── LICENSE                                  # MIT Open-Source License
+└── README.md                                # Project Documentation
 ```
 
 ---
 
-## Quickstart Guide
+## Quick Start Guide
 
 ### 1. Installation
 ```bash
-pip install -r Wi-Fi-Sensing-ESP32-/analytics/requirements.txt
+# Clone the repository
+git clone https://github.com/techindro/Wi-Fi-Sensing-ESP32-.git
+cd Wi-Fi-Sensing-ESP32-
+
+# Install Python requirements
+pip install -r analytics/requirements.txt
 ```
 
-### 2. Run the Real-Time 3D Sensing Engine & Web Dashboard
+### 2. Launch 3D Real-Time Web Dashboard
 ```bash
 python main.py --dashboard
 ```
-Or simply double-click **`start.bat`**.
-Open your browser at **`http://localhost:8000`** to interact with the live 3D skeleton visualizer, breathing waveforms, and Re-ID tracks.
+Open **[http://localhost:8000](http://localhost:8000)** in your browser to view the interactive 3D holographic human pose reconstruction, contactless vitals, and fall alert radar.
 
-### 3. Run Automated Tests & Latency Benchmark
+### 3. Run Test Suite
 ```bash
-python run_tests.py
+python main.py --test
 ```
 
 ### 4. Train the Model with Kinematic & Vital Loss
@@ -181,16 +168,14 @@ python run_tests.py
 python main.py --train
 ```
 
-### 5. Stream Real ESP32 Hardware
-Flash `firmware/transmitter/transmitter.ino` and `firmware/receiver/receiver.ino` to your two ESP32 devices. Then start the serial gateway:
+### 5. Flash ESP32 & Connect Real Hardware
+Flash `firmware/esp32_csi_node/` onto your ESP32 nodes using ESP-IDF, connect to USB, and start serial streaming:
 ```bash
 python main.py --bridge --serial-port COM3
 ```
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-Copyright (c) 2026 techindro.
