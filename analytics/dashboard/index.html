@@ -3,15 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MIT RF-Pose3D | Next-Gen Holographic Wi-Fi Radar & Vital Sensing</title>
+  <title>RF-Sense3D | Edge-Scalable Wi-Fi Holographic Radar, Fall Alert & Vitals</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Three.js & OrbitControls -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-  <!-- Chart.js for High-Precision Real-Time Vitals -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <!-- Google Fonts: Space Grotesk, Orbitron, JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,9 +33,10 @@
               emerald: '#10b981',
               lime: '#a3e635',
               rose: '#f43f5e',
+              purple: '#c084fc',
               amber: '#f59e0b',
               dark: '#030712',
-              card: 'rgba(8, 14, 28, 0.82)'
+              card: 'rgba(8, 14, 28, 0.85)'
             }
           }
         }
@@ -67,17 +66,14 @@
       border-color: rgba(0, 240, 255, 0.45);
       box-shadow: 0 12px 40px 0 rgba(0, 240, 255, 0.15), inset 0 0 16px rgba(0, 240, 255, 0.08);
     }
-    .radar-grid {
-      background-image: 
-        linear-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0, 240, 255, 0.08) 1px, transparent 1px);
-      background-size: 30px 30px;
-    }
     .glow-text-cyan {
       text-shadow: 0 0 10px rgba(0, 240, 255, 0.6), 0 0 20px rgba(0, 240, 255, 0.2);
     }
     .glow-text-rose {
       text-shadow: 0 0 10px rgba(244, 63, 94, 0.6), 0 0 20px rgba(244, 63, 94, 0.2);
+    }
+    .glow-text-purple {
+      text-shadow: 0 0 10px rgba(192, 132, 252, 0.6), 0 0 20px rgba(192, 132, 252, 0.2);
     }
     .radar-sweep {
       background: conic-gradient(from 0deg at 50% 50%, rgba(0, 240, 255, 0.35) 0deg, rgba(0, 240, 255, 0) 60deg, rgba(0, 240, 255, 0) 360deg);
@@ -94,16 +90,32 @@
       0%, 100% { box-shadow: 0 0 15px rgba(0, 240, 255, 0.4); }
       50% { box-shadow: 0 0 30px rgba(0, 240, 255, 0.8), 0 0 8px rgba(255, 255, 255, 0.5); }
     }
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
+    .strobe-alert {
+      animation: strobe 0.6s infinite alternate;
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(0, 240, 255, 0.3);
-      border-radius: 2px;
+    @keyframes strobe {
+      from { background-color: rgba(244, 63, 94, 0.2); border-color: rgba(244, 63, 94, 0.5); }
+      to { background-color: rgba(244, 63, 94, 0.7); border-color: rgba(255, 255, 255, 0.9); box-shadow: 0 0 30px rgba(244, 63, 94, 0.8); }
     }
   </style>
 </head>
 <body class="w-screen h-screen relative font-sans">
+
+  <!-- EMERGENCY FALL ALERT BANNER (TOP POPUP) -->
+  <div id="fall-alert-banner" class="hidden absolute top-16 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-2xl strobe-alert border-2 border-rose-500 text-white flex items-center gap-4 shadow-2xl backdrop-blur-xl">
+    <div class="w-4 h-4 rounded-full bg-white animate-ping"></div>
+    <div>
+      <h3 class="font-tech text-base font-black tracking-wider text-white flex items-center gap-2">
+        <span>🚨 EMERGENCY: CRITICAL FALL DETECTED!</span>
+      </h3>
+      <p class="text-xs font-mono text-rose-100">
+        Sudden vertical drop (&gt;1.5 m/s) on SUBJECT_01. Aspect ratio inverted (Floor Contact).
+      </p>
+    </div>
+    <button id="btn-dismiss-fall" class="px-3 py-1.5 rounded-lg bg-white text-rose-900 hover:bg-rose-100 font-tech text-xs font-bold transition shadow">
+      DISMISS / RESET
+    </button>
+  </div>
 
   <!-- TOP MIL-SPEC HUD HEADER -->
   <header class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6 py-3 hud-card border-t-0 border-x-0 rounded-none">
@@ -119,11 +131,11 @@
             RF-SENSE3D QUANTUM
           </h1>
           <span class="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-widest bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 rounded">
-            NLoS RADAR v3.4
+            NLoS RADAR v3.5
           </span>
         </div>
         <p class="text-[11px] text-slate-400 font-mono tracking-tight">
-          Edge-Scalable Passive Wi-Fi CSI 3D Holographic Reconstruction Platform
+          Edge-Scalable Passive Wi-Fi CSI 3D Holographic Sensing & Fall Alert Platform
         </p>
       </div>
     </div>
@@ -131,13 +143,13 @@
     <!-- Center Quick Telemetry Bar -->
     <div class="hidden md:flex items-center space-x-8 bg-slate-950/60 px-5 py-1.5 rounded-full border border-cyan-900/50">
       <div class="flex items-center space-x-2">
-        <span class="text-[11px] text-slate-400 font-mono uppercase">Carrier:</span>
-        <span class="font-mono text-xs text-cyan-300 font-bold">2.412 GHz (Ch 1)</span>
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Activity State:</span>
+        <span id="header-activity" class="font-tech text-xs text-emerald-400 font-bold tracking-wider">WALKING (NORMAL)</span>
       </div>
       <div class="w-px h-3 bg-slate-800"></div>
       <div class="flex items-center space-x-2">
         <span class="text-[11px] text-slate-400 font-mono uppercase">Subcarriers:</span>
-        <span class="font-mono text-xs text-emerald-400 font-bold">64 OFDM / MIMO</span>
+        <span class="font-mono text-xs text-cyan-300 font-bold">64 OFDM / MIMO</span>
       </div>
       <div class="w-px h-3 bg-slate-800"></div>
       <div class="flex items-center space-x-2">
@@ -146,8 +158,10 @@
       </div>
       <div class="w-px h-3 bg-slate-800"></div>
       <div class="flex items-center space-x-2">
-        <span class="text-[11px] text-slate-400 font-mono uppercase">Wall Loss:</span>
-        <span class="font-mono text-xs text-amber-400 font-bold">-14.2 dB (Concrete)</span>
+        <span class="text-[11px] text-slate-400 font-mono uppercase">Audio Alert:</span>
+        <button id="btn-toggle-audio" class="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 border border-cyan-700 text-cyan-300 hover:bg-cyan-900 transition">
+          🔊 AUDIO ON
+        </button>
       </div>
     </div>
 
@@ -213,8 +227,8 @@
         </div>
 
         <div class="flex justify-between items-center pt-1 text-[11px] font-mono border-t border-slate-800/50">
-          <span class="text-slate-400">Velocity Stride:</span>
-          <span id="target-speed" class="text-amber-300 font-bold">1.18 m/s</span>
+          <span class="text-slate-400">Activity State:</span>
+          <span id="target-activity-badge" class="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-400 font-bold text-[10px]">WALKING</span>
         </div>
       </div>
     </div>
@@ -231,7 +245,6 @@
 
       <!-- Circular Radar Sweep Screen -->
       <div class="relative w-44 h-44 rounded-full border-2 border-cyan-500/40 overflow-hidden flex items-center justify-center bg-slate-950/90 shadow-inner">
-        <!-- Concentric Distance Rings -->
         <div class="absolute w-36 h-36 rounded-full border border-cyan-500/20"></div>
         <div class="absolute w-24 h-24 rounded-full border border-cyan-500/25"></div>
         <div class="absolute w-12 h-12 rounded-full border border-cyan-500/30"></div>
@@ -241,35 +254,35 @@
         </div>
         <!-- Sweep Sector Line -->
         <div class="absolute inset-0 radar-sweep"></div>
-        <!-- Radar Target Blip -->
+        <!-- Target 1 Blip (Cyan) -->
         <div id="radar-blip" class="absolute w-3.5 h-3.5 rounded-full bg-cyan-300 shadow-lg shadow-cyan-400 animate-ping transition-all duration-300" style="top: 35%; left: 55%;"></div>
         <div id="radar-blip-core" class="absolute w-2.5 h-2.5 rounded-full bg-cyan-400 border border-white transition-all duration-300" style="top: 36%; left: 56%;"></div>
-        <!-- Antenna Array Station Origin -->
+        <!-- Target 2 Blip (Purple) -->
+        <div id="radar-blip-2" class="hidden absolute w-3.5 h-3.5 rounded-full bg-purple-400 shadow-lg shadow-purple-400 animate-ping transition-all duration-300" style="top: 60%; left: 40%;"></div>
+        <div id="radar-blip-core-2" class="hidden absolute w-2.5 h-2.5 rounded-full bg-purple-400 border border-white transition-all duration-300" style="top: 61%; left: 41%;"></div>
+        <!-- Origin -->
         <div class="absolute bottom-1 w-3 h-1.5 bg-rose-500 rounded-sm"></div>
       </div>
       <div class="w-full flex justify-between text-[10px] font-mono text-slate-400 px-2">
         <span>Range: 5.0m</span>
-        <span>Rx Array: 3 Nodes</span>
+        <span>Dual Track: <span id="radar-mode-text" class="text-cyan-400">Single</span></span>
       </div>
     </div>
 
-    <!-- Card 3: Physical Environment Stats -->
-    <div class="hud-card rounded-2xl p-3.5 pointer-events-auto space-y-2 text-xs">
-      <div class="flex justify-between items-center text-[11px] font-mono">
-        <span class="text-slate-400">RF Clutter Baseline:</span>
-        <span class="text-emerald-400 font-bold">-68.4 dBm (Filtered)</span>
+    <!-- Card 3: Doppler Energy Spectrogram -->
+    <div class="hud-card rounded-2xl p-3.5 pointer-events-auto space-y-1.5 text-xs">
+      <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
+        <span>Micro-Doppler Spectrogram Waterfall</span>
+        <span class="text-cyan-400">$\pm 15\,\text{Hz}$</span>
       </div>
-      <div class="flex justify-between items-center text-[11px] font-mono">
-        <span class="text-slate-400">Phase Sanitization:</span>
-        <span class="text-cyan-300 font-bold">0.00 Rad Residual Tilt</span>
-      </div>
+      <canvas id="spectrogram-canvas" width="280" height="50" class="w-full h-[50px] rounded bg-slate-950 border border-slate-800"></canvas>
     </div>
   </aside>
 
   <!-- RIGHT HUD: CARDIOPULMONARY DYNAMICS & 3D AVATAR CONTROLS -->
   <aside class="absolute right-6 top-20 bottom-6 z-20 w-88 flex flex-col justify-between pointer-events-none space-y-3">
     
-    <!-- Card 1: Contactless Vital Signs (ECG & Respiration Waveform) -->
+    <!-- Card 1: Contactless Vital Signs -->
     <div class="hud-card rounded-2xl p-4.5 pointer-events-auto space-y-3.5">
       <div class="flex items-center justify-between border-b border-rose-900/40 pb-2.5">
         <div class="flex items-center gap-2">
@@ -315,56 +328,58 @@
           </span>
           <span class="text-cyan-400">0.27 Hz</span>
         </div>
-        <canvas id="waveform-canvas" width="310" height="75" class="w-full h-[75px] rounded"></canvas>
+        <canvas id="waveform-canvas" width="310" height="70" class="w-full h-[70px] rounded"></canvas>
       </div>
     </div>
 
-    <!-- Card 2: 3D Holographic Model & Shader Customizer -->
+    <!-- Card 2: 3D Holographic Model & Action Controls -->
     <div class="hud-card rounded-2xl p-4 pointer-events-auto space-y-3">
       <div class="flex items-center justify-between border-b border-cyan-900/40 pb-2">
         <h3 class="font-tech text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
           <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
-          3D Avatar Visualization
+          Action & Posture Engine
         </h3>
       </div>
 
-      <!-- Mesh Style Selector -->
-      <div class="space-y-1.5">
-        <span class="text-[11px] text-slate-400 font-mono block">Shader Mesh Mode:</span>
-        <div class="grid grid-cols-3 gap-1.5">
-          <button id="btn-style-avatar" class="px-2 py-2 rounded-xl bg-cyan-950 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/60 text-xs font-tech font-semibold transition shadow-sm shadow-cyan-900">3D Body</button>
-          <button id="btn-style-wire" class="px-2 py-2 rounded-xl bg-slate-900/90 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-xs font-tech transition">Wireframe</button>
-          <button id="btn-style-skel" class="px-2 py-2 rounded-xl bg-slate-900/90 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-xs font-tech transition">Skeleton</button>
-        </div>
-      </div>
-
       <!-- Kinematic Motion Postures -->
-      <div class="space-y-1.5 pt-1">
-        <span class="text-[11px] text-slate-400 font-mono block">Human Action Mode:</span>
+      <div class="space-y-1.5">
         <div class="grid grid-cols-2 gap-1.5">
           <button id="btn-motion-walk" class="px-2 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1">
-            <span>🚶</span> Walking Gait
+            <span>🚶</span> Walk
           </button>
           <button id="btn-motion-wave" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
-            <span>🙋</span> Arm Gesture
+            <span>🙋</span> Wave
           </button>
           <button id="btn-motion-sit" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
-            <span>🪑</span> Seated Vitals
+            <span>🪑</span> Sit
           </button>
           <button id="btn-motion-multi" class="px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1">
-            <span>👥</span> Dual Target
+            <span>👥</span> Dual Track
           </button>
+        </div>
+        <!-- EMERGENCY FALL SIMULATOR BUTTON -->
+        <button id="btn-motion-fall" class="w-full mt-1.5 px-2 py-1.5 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-700 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1.5 shadow-sm shadow-rose-950">
+          <span>🚨</span> SIMULATE SUDDEN FALL
+        </button>
+      </div>
+
+      <!-- Shader Mode -->
+      <div class="space-y-1 pt-1 border-t border-slate-800">
+        <div class="grid grid-cols-3 gap-1">
+          <button id="btn-style-avatar" class="px-1.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/60 text-[10px] font-tech font-semibold">3D Body</button>
+          <button id="btn-style-wire" class="px-1.5 py-1 rounded bg-slate-900 text-slate-300 border border-slate-700 text-[10px] font-tech">Wireframe</button>
+          <button id="btn-style-skel" class="px-1.5 py-1 rounded bg-slate-900 text-slate-300 border border-slate-700 text-[10px] font-tech">Skeleton</button>
         </div>
       </div>
     </div>
 
     <!-- Card 3: Camera Presets -->
     <div class="hud-card rounded-2xl p-3.5 pointer-events-auto flex items-center justify-between text-xs">
-      <span class="text-slate-400 font-mono text-[11px]">Camera Angle:</span>
+      <span class="text-slate-400 font-mono text-[11px]">Camera:</span>
       <div class="flex space-x-1.5">
-        <button id="btn-view-front" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[11px] font-mono transition">Front (2D)</button>
-        <button id="btn-view-top" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[11px] font-mono transition">Top Radar</button>
-        <button id="btn-view-iso" class="px-2.5 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition">3D Free Orbit</button>
+        <button id="btn-view-front" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[10px] font-mono transition">Front</button>
+        <button id="btn-view-top" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-cyan-950 text-slate-300 border border-slate-700 text-[10px] font-mono transition">Top Radar</button>
+        <button id="btn-view-iso" class="px-2 py-1 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[10px] font-mono font-bold transition">3D Orbit</button>
       </div>
     </div>
   </aside>
@@ -373,29 +388,73 @@
   <footer class="absolute bottom-4 left-6 right-6 z-20 flex justify-between items-center pointer-events-none">
     <div class="hud-card pointer-events-auto px-4 py-2 rounded-xl text-xs flex items-center space-x-6">
       <div class="flex items-center space-x-2">
-        <span class="w-3 h-3 rounded-full bg-amber-400 inline-block shadow-sm shadow-amber-400"></span>
-        <span class="text-slate-300 font-mono text-[11px]">Cranial/Head (1 Node)</span>
-      </div>
-      <div class="flex items-center space-x-2">
         <span class="w-3 h-3 rounded-full bg-cyan-400 inline-block shadow-sm shadow-cyan-400"></span>
-        <span class="text-slate-300 font-mono text-[11px]">Torso & Arms (8 Joints)</span>
+        <span class="text-slate-300 font-mono text-[11px]">Subject #1 (Cyan)</span>
       </div>
       <div class="flex items-center space-x-2">
-        <span class="w-3 h-3 rounded-full bg-emerald-400 inline-block shadow-sm shadow-emerald-400"></span>
-        <span class="text-slate-300 font-mono text-[11px]">Lower Limbs (8 Joints)</span>
+        <span class="w-3 h-3 rounded-full bg-purple-400 inline-block shadow-sm shadow-purple-400"></span>
+        <span class="text-slate-300 font-mono text-[11px]">Subject #2 (Magenta Dual)</span>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-sm shadow-rose-500"></span>
+        <span class="text-slate-300 font-mono text-[11px]">Fall Alert Threshold (&lt;0.35m)</span>
       </div>
     </div>
 
     <div class="hud-card pointer-events-auto px-4 py-2 rounded-xl text-[11px] text-slate-400 font-mono flex items-center gap-2">
       <span class="text-cyan-400">💡 Tip:</span>
-      <span>Left-Click Drag to Orbit 3D Scene | Scroll to Zoom | Right-Click to Pan</span>
+      <span>Left-Click Drag to Orbit 3D Scene | Scroll to Zoom | Click "Simulate Fall" to Test Alarm</span>
     </div>
   </footer>
 
   <!-- THREE.JS 3D ENGINE & SYSTEM CONTROLLER -->
   <script>
     // =========================================================================
-    // 1. Scene, Camera, High-Tech Lighting & Fog
+    // 1. Audio Synthesis Engine (Web Audio API)
+    // =========================================================================
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function playBeep(freq = 880, duration = 0.1, type = 'sine') {
+      if (!audioEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playFallAlarm() {
+      if (!audioEnabled) return;
+      playBeep(440, 0.25, 'sawtooth');
+      setTimeout(() => playBeep(330, 0.35, 'sawtooth'), 250);
+    }
+
+    document.getElementById('btn-toggle-audio').onclick = (e) => {
+      audioEnabled = !audioEnabled;
+      e.target.textContent = audioEnabled ? '🔊 AUDIO ON' : '🔇 AUDIO OFF';
+      e.target.className = audioEnabled 
+        ? 'px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-950 border border-cyan-700 text-cyan-300 hover:bg-cyan-900 transition'
+        : 'px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 border border-slate-700 text-slate-400 hover:bg-slate-800 transition';
+    };
+
+    // =========================================================================
+    // 2. Scene, Camera, High-Tech Lighting & Fog
     // =========================================================================
     const container = document.getElementById('threejs-container');
     const scene = new THREE.Scene();
@@ -415,7 +474,7 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.06;
     controls.target.set(0, 1.1, 0);
-    controls.maxPolarAngle = Math.PI / 2 + 0.05; // Don't flip under floor
+    controls.maxPolarAngle = Math.PI / 2 + 0.05;
 
     // Atmospheric Sci-Fi Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
@@ -433,13 +492,12 @@
     scene.add(heartPulsingLight);
 
     // =========================================================================
-    // 2. High-Tech Cyber Grid Floor & Laser Scan Line
+    // 3. Cyber Grid Floor & Laser Scan
     // =========================================================================
     const gridFloor = new THREE.GridHelper(14, 28, 0x00f0ff, 0x0f172a);
     gridFloor.position.y = 0;
     scene.add(gridFloor);
 
-    // Animated Laser Sweep Plane
     const laserPlaneGeo = new THREE.PlaneGeometry(14, 0.08);
     const laserPlaneMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
     const laserSweep = new THREE.Mesh(laserPlaneGeo, laserPlaneMat);
@@ -447,7 +505,7 @@
     laserSweep.position.y = 0.01;
     scene.add(laserSweep);
 
-    // Simulated 3-Antenna Wi-Fi Array Station in the back
+    // Simulated 3-Antenna Wi-Fi Array
     const antennaGroup = new THREE.Group();
     for (let i = -1; i <= 1; i++) {
       const antMast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8 }));
@@ -462,84 +520,8 @@
     scene.add(antennaGroup);
 
     // =========================================================================
-    // 3. Volumetric Anatomical 3D Human Avatar Model
+    // 4. Volumetric Human Avatar Builder (Subject #1 Cyan & Subject #2 Purple)
     // =========================================================================
-    const avatarGroup = new THREE.Group();
-    scene.add(avatarGroup);
-
-    // Cyberpunk Translucent Body Shader Materials
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: 0x00f0ff,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.6,
-      roughness: 0.15,
-      metalness: 0.85,
-      transparent: true,
-      opacity: 0.88
-    });
-
-    const headMat = new THREE.MeshStandardMaterial({
-      color: 0xfbbf24,
-      emissive: 0xd97706,
-      emissiveIntensity: 0.8,
-      roughness: 0.2
-    });
-
-    const lowerLimbsMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      emissive: 0x059669,
-      emissiveIntensity: 0.6,
-      roughness: 0.2,
-      metalness: 0.8
-    });
-
-    // Anatomical Body Segments
-    // Head & Visor
-    const headGroup = new THREE.Group();
-    const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 32, 32), headMat);
-    const visorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
-    visorMesh.position.set(0, 0.02, 0.07);
-    headGroup.add(headMesh);
-    headGroup.add(visorMesh);
-    avatarGroup.add(headGroup);
-
-    // Torso / Chest with Pulsing Heart Core
-    const chestGroup = new THREE.Group();
-    const chestMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.19, 0.48, 20), bodyMat);
-    const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
-    heartCore.position.set(-0.04, 0.08, 0.05);
-    chestGroup.add(chestMesh);
-    chestGroup.add(heartCore);
-    avatarGroup.add(chestGroup);
-
-    // Pelvis
-    const pelvisMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.17, 0.22, 20), bodyMat);
-    avatarGroup.add(pelvisMesh);
-
-    // Limb Segment Builder
-    function buildLimb(radiusTop, radiusBottom, length, mat) {
-      const g = new THREE.Group();
-      const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 20);
-      geom.translate(0, -length / 2, 0); // Pivot joint
-      const m = new THREE.Mesh(geom, mat);
-      const jointBall = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.15, 16, 16), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
-      g.add(m);
-      g.add(jointBall);
-      avatarGroup.add(g);
-      return g;
-    }
-
-    const leftUpperArm = buildLimb(0.065, 0.055, 0.32, bodyMat);
-    const rightUpperArm = buildLimb(0.065, 0.055, 0.32, bodyMat);
-    const leftForearm = buildLimb(0.055, 0.045, 0.30, bodyMat);
-    const rightForearm = buildLimb(0.055, 0.045, 0.30, bodyMat);
-
-    const leftThigh = buildLimb(0.095, 0.075, 0.44, lowerLimbsMat);
-    const rightThigh = buildLimb(0.095, 0.075, 0.44, lowerLimbsMat);
-    const leftCalf = buildLimb(0.075, 0.06, 0.44, lowerLimbsMat);
-    const rightCalf = buildLimb(0.075, 0.06, 0.44, lowerLimbsMat);
-
-    // Kinematic Skeleton Node Spheres & Connecting Bones
     const COCO_BONES = [
       [0, 1], [0, 2], [1, 3], [2, 4],             // Head
       [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],    // Upper Body
@@ -547,101 +529,187 @@
       [11, 13], [13, 15], [12, 14], [14, 16]      // Lower Body
     ];
 
-    const jointMeshes = [];
-    const boneMeshes = [];
-    const jointGeo = new THREE.SphereGeometry(0.04, 16, 16);
-    const jointMaterial = new THREE.MeshBasicMaterial({ color: 0xfbbf24 });
-
-    for (let i = 0; i < 17; i++) {
-      const jm = new THREE.Mesh(jointGeo, jointMaterial);
-      avatarGroup.add(jm);
-      jointMeshes.push(jm);
-    }
-
-    const boneGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.0, 12);
-    COCO_BONES.forEach(() => {
-      const bm = new THREE.Mesh(boneGeo, new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.6 }));
-      avatarGroup.add(bm);
-      boneMeshes.push(bm);
-    });
-
-    // Holographic Target Tracking Reticle Disc on Ground
-    const discGeo = new THREE.RingGeometry(0.15, 0.85, 32);
-    const discMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
-    const groundDisc = new THREE.Mesh(discGeo, discMat);
-    groundDisc.rotation.x = -Math.PI / 2;
-    groundDisc.position.y = 0.02;
-    scene.add(groundDisc);
-
-    // Bounding Box Wireframe around Subject
-    const bboxGeo = new THREE.BoxGeometry(1.0, 1.9, 0.8);
-    const bboxMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.25 });
-    const bboxMesh = new THREE.Mesh(bboxGeo, bboxMat);
-    bboxMesh.position.y = 1.0;
-    scene.add(bboxMesh);
-
-    function positionLimbGroup(group, pStart, pEnd) {
-      group.position.copy(pStart);
-      const dir = new THREE.Vector3().subVectors(pEnd, pStart);
-      const len = dir.length();
-      group.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize());
-      group.scale.set(1, len / 0.32, 1);
-    }
-
-    function updateHumanAvatarPose(kpts) {
-      if (!kpts || kpts.length !== 17) return;
-
-      const p = kpts.map(([x, y, z]) => new THREE.Vector3(x, z + 1.15, y));
-
-      // 1. Joint Nodes
-      for (let i = 0; i < 17; i++) {
-        jointMeshes[i].position.copy(p[i]);
-      }
-
-      // 2. Bones
-      COCO_BONES.forEach(([j1, j2], idx) => {
-        const p1 = p[j1];
-        const p2 = p[j2];
-        const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
-        const distance = Math.max(p1.distanceTo(p2), 0.05);
-
-        boneMeshes[idx].position.copy(midpoint);
-        boneMeshes[idx].scale.set(1, distance, 1);
-        boneMeshes[idx].quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(p2, p1).normalize());
+    function createHumanAvatar(themeColorHex = 0x00f0ff, jointColorHex = 0xfbbf24) {
+      const group = new THREE.Group();
+      
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: themeColorHex,
+        emissive: themeColorHex,
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+        metalness: 0.8,
+        transparent: true,
+        opacity: 0.85
       });
 
-      // 3. Volumetric Anatomical Body Parts
-      headGroup.position.copy(p[0]); // Head center
+      const headMat = new THREE.MeshStandardMaterial({
+        color: jointColorHex,
+        emissive: jointColorHex,
+        emissiveIntensity: 0.7,
+        roughness: 0.2
+      });
 
-      const midShoulder = new THREE.Vector3().addVectors(p[5], p[6]).multiplyScalar(0.5);
-      const midHip = new THREE.Vector3().addVectors(p[11], p[12]).multiplyScalar(0.5);
+      // Head & Visor
+      const headGroup = new THREE.Group();
+      const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 24, 24), headMat);
+      const visorMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.06, 0.14), new THREE.MeshBasicMaterial({ color: themeColorHex }));
+      visorMesh.position.set(0, 0.02, 0.07);
+      headGroup.add(headMesh);
+      headGroup.add(visorMesh);
+      group.add(headGroup);
 
-      chestGroup.position.copy(new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5));
-      const torsoDir = new THREE.Vector3().subVectors(midShoulder, midHip);
-      chestGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
+      // Torso / Chest
+      const chestGroup = new THREE.Group();
+      const chestMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.19, 0.48, 16), bodyMat);
+      const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+      heartCore.position.set(-0.04, 0.08, 0.05);
+      chestGroup.add(chestMesh);
+      chestGroup.add(heartCore);
+      group.add(chestGroup);
 
-      pelvisMesh.position.copy(midHip);
+      // Pelvis
+      const pelvisMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.17, 0.22, 16), bodyMat);
+      group.add(pelvisMesh);
 
-      positionLimbGroup(leftUpperArm, p[5], p[7]);
-      positionLimbGroup(leftForearm, p[7], p[9]);
-      positionLimbGroup(rightUpperArm, p[6], p[8]);
-      positionLimbGroup(rightForearm, p[8], p[10]);
+      // Limb Builder
+      function buildLimb(radiusTop, radiusBottom, length) {
+        const lg = new THREE.Group();
+        const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 16);
+        geom.translate(0, -length / 2, 0);
+        const m = new THREE.Mesh(geom, bodyMat);
+        const jointBall = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.15, 16, 16), new THREE.MeshBasicMaterial({ color: jointColorHex }));
+        lg.add(m);
+        lg.add(jointBall);
+        group.add(lg);
+        return lg;
+      }
 
-      positionLimbGroup(leftThigh, p[11], p[13]);
-      positionLimbGroup(leftCalf, p[13], p[15]);
-      positionLimbGroup(rightThigh, p[12], p[14]);
-      positionLimbGroup(rightCalf, p[14], p[16]);
+      const leftUpperArm = buildLimb(0.065, 0.055, 0.32);
+      const rightUpperArm = buildLimb(0.065, 0.055, 0.32);
+      const leftForearm = buildLimb(0.055, 0.045, 0.30);
+      const rightForearm = buildLimb(0.055, 0.045, 0.30);
 
-      // Ground Disc & Bounding Box
-      groundDisc.position.set(midHip.x, 0.02, midHip.z);
-      bboxMesh.position.set(midHip.x, 1.0, midHip.z);
+      const leftThigh = buildLimb(0.095, 0.075, 0.44);
+      const rightThigh = buildLimb(0.095, 0.075, 0.44);
+      const leftCalf = buildLimb(0.075, 0.06, 0.44);
+      const rightCalf = buildLimb(0.075, 0.06, 0.44);
 
-      // Heart Light Position
-      heartPulsingLight.position.copy(chestGroup.position);
+      // 17 Nodes & Bones
+      const jointMeshes = [];
+      const boneMeshes = [];
+      const jointGeo = new THREE.SphereGeometry(0.04, 16, 16);
+      const jointMaterial = new THREE.MeshBasicMaterial({ color: jointColorHex });
+
+      for (let i = 0; i < 17; i++) {
+        const jm = new THREE.Mesh(jointGeo, jointMaterial);
+        group.add(jm);
+        jointMeshes.push(jm);
+      }
+
+      const boneGeo = new THREE.CylinderGeometry(0.018, 0.018, 1.0, 12);
+      COCO_BONES.forEach(() => {
+        const bm = new THREE.Mesh(boneGeo, new THREE.MeshBasicMaterial({ color: themeColorHex, transparent: true, opacity: 0.6 }));
+        group.add(bm);
+        boneMeshes.push(bm);
+      });
+
+      // Ground Disc
+      const discGeo = new THREE.RingGeometry(0.15, 0.85, 32);
+      const discMat = new THREE.MeshBasicMaterial({ color: themeColorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+      const groundDisc = new THREE.Mesh(discGeo, discMat);
+      groundDisc.rotation.x = -Math.PI / 2;
+      groundDisc.position.y = 0.02;
+      scene.add(groundDisc);
+
+      // Bounding Box
+      const bboxGeo = new THREE.BoxGeometry(1.0, 1.9, 0.8);
+      const bboxMat = new THREE.MeshBasicMaterial({ color: themeColorHex, wireframe: true, transparent: true, opacity: 0.25 });
+      const bboxMesh = new THREE.Mesh(bboxGeo, bboxMat);
+      scene.add(bboxMesh);
+
+      function positionLimbGroup(lg, pStart, pEnd) {
+        lg.position.copy(pStart);
+        const dir = new THREE.Vector3().subVectors(pEnd, pStart);
+        const len = dir.length();
+        lg.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize());
+        lg.scale.set(1, len / 0.32, 1);
+      }
+
+      function updatePose(kpts) {
+        if (!kpts || kpts.length !== 17) return;
+        const p = kpts.map(([x, y, z]) => new THREE.Vector3(x, z + 1.15, y));
+
+        for (let i = 0; i < 17; i++) jointMeshes[i].position.copy(p[i]);
+
+        COCO_BONES.forEach(([j1, j2], idx) => {
+          const p1 = p[j1];
+          const p2 = p[j2];
+          const midpoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+          const distance = Math.max(p1.distanceTo(p2), 0.05);
+          boneMeshes[idx].position.copy(midpoint);
+          boneMeshes[idx].scale.set(1, distance, 1);
+          boneMeshes[idx].quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(p2, p1).normalize());
+        });
+
+        headGroup.position.copy(p[0]);
+        const midShoulder = new THREE.Vector3().addVectors(p[5], p[6]).multiplyScalar(0.5);
+        const midHip = new THREE.Vector3().addVectors(p[11], p[12]).multiplyScalar(0.5);
+
+        chestGroup.position.copy(new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5));
+        const torsoDir = new THREE.Vector3().subVectors(midShoulder, midHip);
+        chestGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
+
+        pelvisMesh.position.copy(midHip);
+
+        positionLimbGroup(leftUpperArm, p[5], p[7]);
+        positionLimbGroup(leftForearm, p[7], p[9]);
+        positionLimbGroup(rightUpperArm, p[6], p[8]);
+        positionLimbGroup(rightForearm, p[8], p[10]);
+
+        positionLimbGroup(leftThigh, p[11], p[13]);
+        positionLimbGroup(leftCalf, p[13], p[15]);
+        positionLimbGroup(rightThigh, p[12], p[14]);
+        positionLimbGroup(rightCalf, p[14], p[16]);
+
+        groundDisc.position.set(midHip.x, 0.02, midHip.z);
+        bboxMesh.position.set(midHip.x, 1.0, midHip.z);
+      }
+
+      function setVisibility(val) {
+        group.visible = val;
+        groundDisc.visible = val;
+        bboxMesh.visible = val;
+      }
+
+      function setMeshStyle(mode) { // 'body', 'wire', 'skel'
+        if (mode === 'skel') {
+          headGroup.visible = false;
+          chestGroup.visible = false;
+          pelvisMesh.visible = false;
+          [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = false);
+        } else {
+          headGroup.visible = true;
+          chestGroup.visible = true;
+          pelvisMesh.visible = true;
+          [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
+          bodyMat.wireframe = (mode === 'wire');
+          bodyMat.opacity = (mode === 'wire' ? 0.5 : 0.85);
+        }
+      }
+
+      return { group, updatePose, setVisibility, setMeshStyle, chestMesh, heartCore };
     }
 
+    // Instantiate Avatar 1 (Cyan) and Avatar 2 (Purple)
+    const avatar1 = createHumanAvatar(0x00f0ff, 0xfbbf24);
+    scene.add(avatar1.group);
+
+    const avatar2 = createHumanAvatar(0xc084fc, 0xf43f5e);
+    scene.add(avatar2.group);
+    avatar2.setVisibility(false); // Initially hidden unless in Dual mode
+
     // =========================================================================
-    // 4. Real-Time Respiration & Heartbeat Canvas Waveform
+    // 5. Canvas Waveforms (Respiration & Micro-Doppler Spectrogram)
     // =========================================================================
     const waveCanvas = document.getElementById('waveform-canvas');
     const waveCtx = waveCanvas.getContext('2d');
@@ -650,10 +718,8 @@
     function drawWaveform(newVal) {
       waveHistory.push(newVal);
       waveHistory.shift();
-
       waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
 
-      // Grid Lines
       waveCtx.strokeStyle = 'rgba(0, 240, 255, 0.1)';
       waveCtx.lineWidth = 1;
       waveCtx.beginPath();
@@ -663,7 +729,6 @@
       }
       waveCtx.stroke();
 
-      // Glowing Cyan Waveform Curve
       waveCtx.strokeStyle = '#00f0ff';
       waveCtx.lineWidth = 2.5;
       waveCtx.shadowColor = '#00f0ff';
@@ -675,186 +740,318 @@
 
       for (let i = 0; i < waveHistory.length; i++) {
         const x = i * step;
-        const y = centerY - waveHistory[i] * 22;
+        const y = centerY - waveHistory[i] * 20;
         if (i === 0) waveCtx.moveTo(x, y);
         else waveCtx.lineTo(x, y);
       }
       waveCtx.stroke();
-      waveCtx.shadowBlur = 0; // reset
+      waveCtx.shadowBlur = 0;
+    }
+
+    // Micro-Doppler Spectrogram Waterfall
+    const specCanvas = document.getElementById('spectrogram-canvas');
+    const specCtx = specCanvas.getContext('2d');
+    const specHistory = [];
+
+    function drawSpectrogram(timeStep) {
+      const slice = [];
+      for (let f = 0; f < 30; f++) {
+        const energy = Math.abs(Math.sin(timeStep * 3.0 + f * 0.2)) * Math.exp(-Math.pow(f - 15, 2) / 40);
+        slice.push(energy);
+      }
+      specHistory.push(slice);
+      if (specHistory.length > 55) specHistory.shift();
+
+      specCtx.clearRect(0, 0, specCanvas.width, specCanvas.height);
+      const cellW = specCanvas.width / 55;
+      const cellH = specCanvas.height / 30;
+
+      for (let x = 0; x < specHistory.length; x++) {
+        for (let y = 0; y < 30; y++) {
+          const val = specHistory[x][y];
+          const hue = 190 + val * 90;
+          const alpha = Math.min(val * 1.5, 1.0);
+          specCtx.fillStyle = `hsla(${hue}, 100%, 50%, ${alpha})`;
+          specCtx.fillRect(x * cellW, y * cellH, cellW + 0.5, cellH + 0.5);
+        }
+      }
     }
 
     // =========================================================================
-    // 5. Radar Blip & Telemetry Synchronization
+    // 6. Radar & Telemetry Element References
     // =========================================================================
     const radarBlip = document.getElementById('radar-blip');
     const radarBlipCore = document.getElementById('radar-blip-core');
+    const radarBlip2 = document.getElementById('radar-blip-2');
+    const radarBlipCore2 = document.getElementById('radar-blip-core-2');
+    const radarModeText = document.getElementById('radar-mode-text');
+
     const coordXEl = document.getElementById('coord-x');
     const coordYEl = document.getElementById('coord-y');
     const coordZEl = document.getElementById('coord-z');
-    const targetSpeedEl = document.getElementById('target-speed');
+    const targetActivityBadge = document.getElementById('target-activity-badge');
+    const headerActivity = document.getElementById('header-activity');
+    const fallBanner = document.getElementById('fall-alert-banner');
     const vitalRespEl = document.getElementById('vital-resp');
     const vitalHeartEl = document.getElementById('vital-heart');
     const latencyEl = document.getElementById('latency-val');
     const targetIdEl = document.getElementById('target-id');
-    const reidConfEl = document.getElementById('reid-conf');
-    const reidBarEl = document.getElementById('reid-bar');
 
-    function updateRadarScope(x, y) {
-      // Map world coords [-2.5, 2.5] -> Radar Scope %
-      const pctX = 50 + (x / 3.0) * 40;
-      const pctY = 50 - (y / 4.0) * 35;
-      radarBlip.style.left = `${pctX}%`;
-      radarBlip.style.top = `${pctY}%`;
-      radarBlipCore.style.left = `${pctX}%`;
-      radarBlipCore.style.top = `${pctY}%`;
+    function updateRadarScope(x1, y1, x2, y2, isDual) {
+      const pctX1 = 50 + (x1 / 3.0) * 40;
+      const pctY1 = 50 - (y1 / 4.0) * 35;
+      radarBlip.style.left = `${pctX1}%`;
+      radarBlip.style.top = `${pctY1}%`;
+      radarBlipCore.style.left = `${pctX1}%`;
+      radarBlipCore.style.top = `${pctY1}%`;
+
+      if (isDual) {
+        radarBlip2.classList.remove('hidden');
+        radarBlipCore2.classList.remove('hidden');
+        const pctX2 = 50 + (x2 / 3.0) * 40;
+        const pctY2 = 50 - (y2 / 4.0) * 35;
+        radarBlip2.style.left = `${pctX2}%`;
+        radarBlip2.style.top = `${pctY2}%`;
+        radarBlipCore2.style.left = `${pctX2}%`;
+        radarBlipCore2.style.top = `${pctY2}%`;
+        radarModeText.textContent = 'Dual Target';
+      } else {
+        radarBlip2.classList.add('hidden');
+        radarBlipCore2.classList.add('hidden');
+        radarModeText.textContent = 'Single';
+      }
     }
 
     // =========================================================================
-    // 6. Interactive Styles & Motion Postures
+    // 7. Motion Postures & Fall Simulator
     // =========================================================================
+    let motionMode = 'walk'; // 'walk', 'wave', 'sit', 'multi', 'fall'
+
+    const btnWalk = document.getElementById('btn-motion-walk');
+    const btnWave = document.getElementById('btn-motion-wave');
+    const btnSit = document.getElementById('btn-motion-sit');
+    const btnMulti = document.getElementById('btn-motion-multi');
+    const btnFall = document.getElementById('btn-motion-fall');
+    const btnDismissFall = document.getElementById('btn-dismiss-fall');
+
+    function setActiveMotion(btn) {
+      [btnWalk, btnWave, btnSit, btnMulti].forEach(b => {
+        b.className = 'px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1';
+      });
+      if (btn !== btnFall) {
+        btn.className = 'px-2 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1 shadow-sm shadow-cyan-950';
+      }
+    }
+
+    btnWalk.onclick = () => {
+      motionMode = 'walk';
+      setActiveMotion(btnWalk);
+      avatar2.setVisibility(false);
+      fallBanner.classList.add('hidden');
+      targetIdEl.textContent = 'SUBJECT_01 (WALK)';
+      targetActivityBadge.textContent = 'WALKING';
+      targetActivityBadge.className = 'px-2 py-0.5 rounded bg-emerald-950 border border-emerald-700 text-emerald-400 font-bold text-[10px]';
+      headerActivity.textContent = 'WALKING (NORMAL)';
+      headerActivity.className = 'font-tech text-xs text-emerald-400 font-bold tracking-wider';
+    };
+
+    btnWave.onclick = () => {
+      motionMode = 'wave';
+      setActiveMotion(btnWave);
+      avatar2.setVisibility(false);
+      fallBanner.classList.add('hidden');
+      targetIdEl.textContent = 'SUBJECT_01 (GESTURE)';
+      targetActivityBadge.textContent = 'WAVING';
+      targetActivityBadge.className = 'px-2 py-0.5 rounded bg-cyan-950 border border-cyan-700 text-cyan-400 font-bold text-[10px]';
+      headerActivity.textContent = 'GESTURE (ARM WAVE)';
+      headerActivity.className = 'font-tech text-xs text-cyan-400 font-bold tracking-wider';
+    };
+
+    btnSit.onclick = () => {
+      motionMode = 'sit';
+      setActiveMotion(btnSit);
+      avatar2.setVisibility(false);
+      fallBanner.classList.add('hidden');
+      targetIdEl.textContent = 'SUBJECT_01 (SEATED)';
+      targetActivityBadge.textContent = 'SITTING';
+      targetActivityBadge.className = 'px-2 py-0.5 rounded bg-amber-950 border border-amber-700 text-amber-400 font-bold text-[10px]';
+      headerActivity.textContent = 'SEATED (QUIESCENT)';
+      headerActivity.className = 'font-tech text-xs text-amber-400 font-bold tracking-wider';
+    };
+
+    btnMulti.onclick = () => {
+      motionMode = 'multi';
+      setActiveMotion(btnMulti);
+      avatar2.setVisibility(true);
+      fallBanner.classList.add('hidden');
+      targetIdEl.textContent = 'DUAL_TRACK_ACTIVE';
+      targetActivityBadge.textContent = 'MULTI-USER';
+      targetActivityBadge.className = 'px-2 py-0.5 rounded bg-purple-950 border border-purple-700 text-purple-400 font-bold text-[10px]';
+      headerActivity.textContent = 'DUAL TARGET TRACKING';
+      headerActivity.className = 'font-tech text-xs text-purple-400 font-bold tracking-wider';
+    };
+
+    btnFall.onclick = () => {
+      motionMode = 'fall';
+      avatar2.setVisibility(false);
+      fallBanner.classList.remove('hidden');
+      playFallAlarm();
+      targetIdEl.textContent = 'SUBJECT_01 (FALLEN)';
+      targetActivityBadge.textContent = '🚨 FALLEN';
+      targetActivityBadge.className = 'px-2 py-0.5 rounded bg-rose-950 border border-rose-600 text-rose-300 font-black text-[10px] animate-pulse';
+      headerActivity.textContent = '🚨 CRITICAL FALL DETECTED';
+      headerActivity.className = 'font-tech text-xs text-rose-400 font-black tracking-wider animate-pulse';
+    };
+
+    btnDismissFall.onclick = () => {
+      btnWalk.click();
+    };
+
+    // Mesh Style Buttons
     const btnStyleAvatar = document.getElementById('btn-style-avatar');
     const btnStyleWire = document.getElementById('btn-style-wire');
     const btnStyleSkel = document.getElementById('btn-style-skel');
 
     function setActiveStyle(btn) {
       [btnStyleAvatar, btnStyleWire, btnStyleSkel].forEach(b => {
-        b.className = 'px-2 py-2 rounded-xl bg-slate-900/90 text-slate-300 border border-slate-700 text-xs font-tech transition';
+        b.className = 'px-1.5 py-1 rounded bg-slate-900 text-slate-300 border border-slate-700 text-[10px] font-tech';
       });
-      btn.className = 'px-2 py-2 rounded-xl bg-cyan-950 text-cyan-300 border border-cyan-500/60 text-xs font-tech font-semibold transition shadow-sm shadow-cyan-900';
+      btn.className = 'px-1.5 py-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/60 text-[10px] font-tech font-semibold';
     }
 
-    btnStyleAvatar.onclick = () => {
-      setActiveStyle(btnStyleAvatar);
-      bodyMat.wireframe = false;
-      bodyMat.opacity = 0.88;
-      headGroup.visible = true;
-      chestGroup.visible = true;
-      pelvisMesh.visible = true;
-      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
-    };
-
-    btnStyleWire.onclick = () => {
-      setActiveStyle(btnStyleWire);
-      bodyMat.wireframe = true;
-      bodyMat.opacity = 0.5;
-      headGroup.visible = true;
-      chestGroup.visible = true;
-      pelvisMesh.visible = true;
-      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
-    };
-
-    btnStyleSkel.onclick = () => {
-      setActiveStyle(btnStyleSkel);
-      headGroup.visible = false;
-      chestGroup.visible = false;
-      pelvisMesh.visible = false;
-      [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = false);
-    };
-
-    // Action Modes
-    let motionMode = 'walk';
-    const btnWalk = document.getElementById('btn-motion-walk');
-    const btnWave = document.getElementById('btn-motion-wave');
-    const btnSit = document.getElementById('btn-motion-sit');
-    const btnMulti = document.getElementById('btn-motion-multi');
-
-    function setActiveMotion(btn) {
-      [btnWalk, btnWave, btnSit, btnMulti].forEach(b => {
-        b.className = 'px-2 py-1.5 rounded-lg bg-slate-900 text-slate-300 border border-slate-700 hover:border-cyan-700 text-[11px] font-mono transition flex items-center justify-center gap-1';
-      });
-      btn.className = 'px-2 py-1.5 rounded-lg bg-cyan-950 text-cyan-300 border border-cyan-600/50 text-[11px] font-mono font-bold transition flex items-center justify-center gap-1 shadow-sm shadow-cyan-950';
-    }
-
-    btnWalk.onclick = () => { motionMode = 'walk'; setActiveMotion(btnWalk); targetIdEl.textContent = 'SUBJECT_01 (WALK)'; targetSpeedEl.textContent = '1.24 m/s'; };
-    btnWave.onclick = () => { motionMode = 'wave'; setActiveMotion(btnWave); targetIdEl.textContent = 'SUBJECT_01 (GESTURE)'; targetSpeedEl.textContent = '0.35 m/s'; };
-    btnSit.onclick = () => { motionMode = 'sit'; setActiveMotion(btnSit); targetIdEl.textContent = 'SUBJECT_01 (SEATED)'; targetSpeedEl.textContent = '0.00 m/s'; };
-    btnMulti.onclick = () => { motionMode = 'multi'; setActiveMotion(btnMulti); targetIdEl.textContent = 'DUAL_TRACK_ACTIVE'; targetSpeedEl.textContent = '1.45 m/s'; };
+    btnStyleAvatar.onclick = () => { setActiveStyle(btnStyleAvatar); avatar1.setMeshStyle('body'); avatar2.setMeshStyle('body'); };
+    btnStyleWire.onclick = () => { setActiveStyle(btnStyleWire); avatar1.setMeshStyle('wire'); avatar2.setMeshStyle('wire'); };
+    btnStyleSkel.onclick = () => { setActiveStyle(btnStyleSkel); avatar1.setMeshStyle('skel'); avatar2.setMeshStyle('skel'); };
 
     // Camera Views
-    document.getElementById('btn-view-front').onclick = () => {
-      camera.position.set(0, 1.4, 4.0);
-      controls.target.set(0, 1.1, 0);
-    };
-    document.getElementById('btn-view-top').onclick = () => {
-      camera.position.set(0, 5.5, 0.05);
-      controls.target.set(0, 0, 0);
-    };
-    document.getElementById('btn-view-iso').onclick = () => {
-      camera.position.set(2.4, 2.2, 3.4);
-      controls.target.set(0, 1.1, 0);
-    };
+    document.getElementById('btn-view-front').onclick = () => { camera.position.set(0, 1.4, 4.0); controls.target.set(0, 1.1, 0); };
+    document.getElementById('btn-view-top').onclick = () => { camera.position.set(0, 5.5, 0.05); controls.target.set(0, 0, 0); };
+    document.getElementById('btn-view-iso').onclick = () => { camera.position.set(2.4, 2.2, 3.4); controls.target.set(0, 1.1, 0); };
 
     // =========================================================================
-    // 7. Continuous Kinematics Simulation Loop
+    // 8. Continuous Kinematics Simulation Loop
     // =========================================================================
     let simTime = 0;
+    let fallProgress = 0.0;
+
     function animateSimulation() {
       simTime += 0.035;
 
-      // Laser sweep animation on floor
       laserSweep.position.z = 3.5 * Math.sin(simTime * 0.5);
 
-      // Heartbeat pulse intensity
+      // Heartbeat pulse
       const heartPulse = (Math.sin(simTime * 7.5) + 1.0) * 0.5;
       heartPulsingLight.intensity = 1.0 + 2.5 * heartPulse;
-      heartCore.scale.setScalar(1.0 + 0.3 * heartPulse);
+      avatar1.heartCore.scale.setScalar(1.0 + 0.3 * heartPulse);
 
-      let cx = 0, cy = 0, cz = 0;
-      let leftArm = 0, rightArm = 0;
-      let leftLeg = 0, rightLeg = 0;
+      let cx1 = 0, cy1 = 0, cz1 = 0;
+      let leftArm1 = 0, rightArm1 = 0;
+      let leftLeg1 = 0, rightLeg1 = 0;
+
+      let cx2 = 0, cy2 = 0, cz2 = 0;
+      let leftArm2 = 0, rightArm2 = 0;
+      let leftLeg2 = 0, rightLeg2 = 0;
 
       if (motionMode === 'walk') {
-        cx = 0.65 * Math.sin(simTime * 0.8);
-        cy = 0.35 * Math.cos(simTime * 0.8);
-        cz = 0.06 * Math.sin(simTime * 1.6);
-        leftArm = 0.22 * Math.sin(simTime * 2);
-        rightArm = -0.22 * Math.sin(simTime * 2);
-        leftLeg = 0.22 * Math.cos(simTime * 2);
-        rightLeg = -0.22 * Math.cos(simTime * 2);
+        fallProgress = 0.0;
+        cx1 = 0.65 * Math.sin(simTime * 0.8);
+        cy1 = 0.35 * Math.cos(simTime * 0.8);
+        cz1 = 0.06 * Math.sin(simTime * 1.6);
+        leftArm1 = 0.22 * Math.sin(simTime * 2);
+        rightArm1 = -0.22 * Math.sin(simTime * 2);
+        leftLeg1 = 0.22 * Math.cos(simTime * 2);
+        rightLeg1 = -0.22 * Math.cos(simTime * 2);
       } else if (motionMode === 'wave') {
-        rightArm = 0.45 * Math.sin(simTime * 4.5); // Fast waving
-        cz = 0.02 * Math.sin(simTime * 1.5);
+        fallProgress = 0.0;
+        rightArm1 = 0.45 * Math.sin(simTime * 4.5);
+        cz1 = 0.02 * Math.sin(simTime * 1.5);
       } else if (motionMode === 'sit') {
-        cz = -0.32; // Seated posture
-        leftLeg = 0.35;
-        rightLeg = 0.35;
+        fallProgress = 0.0;
+        cz1 = -0.32;
+        leftLeg1 = 0.35;
+        rightLeg1 = 0.35;
       } else if (motionMode === 'multi') {
-        cx = 0.85 * Math.sin(simTime * 1.2);
-        cy = 0.45 * Math.cos(simTime * 1.2);
+        fallProgress = 0.0;
+        // Target 1 (Cyan)
+        cx1 = 0.85 * Math.sin(simTime * 1.2);
+        cy1 = 0.45 * Math.cos(simTime * 1.2);
+        leftArm1 = 0.2 * Math.sin(simTime * 2.2);
+        rightArm1 = -0.2 * Math.sin(simTime * 2.2);
+        leftLeg1 = 0.2 * Math.cos(simTime * 2.2);
+        rightLeg1 = -0.2 * Math.cos(simTime * 2.2);
+
+        // Target 2 (Purple) - Crossing path
+        cx2 = -0.85 * Math.sin(simTime * 1.0 + 0.8);
+        cy2 = -0.45 * Math.cos(simTime * 1.0 + 0.8);
+        leftArm2 = -0.2 * Math.sin(simTime * 2.0);
+        rightArm2 = 0.2 * Math.sin(simTime * 2.0);
+        leftLeg2 = -0.2 * Math.cos(simTime * 2.0);
+        rightLeg2 = 0.2 * Math.cos(simTime * 2.0);
+      } else if (motionMode === 'fall') {
+        fallProgress = Math.min(fallProgress + 0.06, 1.0);
+        // Rapid drop to floor level
+        cz1 = -0.85 * fallProgress;
+        cx1 = 0.3 * fallProgress;
+        leftArm1 = 0.4 * fallProgress;
+        rightArm1 = 0.5 * fallProgress;
+        leftLeg1 = 0.6 * fallProgress;
+        rightLeg1 = 0.6 * fallProgress;
       }
 
-      // Update Coordinates Display
-      coordXEl.textContent = `${cx >= 0 ? '+' : ''}${cx.toFixed(2)} m`;
-      coordYEl.textContent = `+${(2.0 + cy).toFixed(2)} m`;
-      coordZEl.textContent = `+${(1.15 + cz).toFixed(2)} m`;
-      updateRadarScope(cx, 2.0 + cy);
+      // Display Coordinates
+      coordXEl.textContent = `${cx1 >= 0 ? '+' : ''}${cx1.toFixed(2)} m`;
+      coordYEl.textContent = `+${(2.0 + cy1).toFixed(2)} m`;
+      coordZEl.textContent = `+${(1.15 + cz1).toFixed(2)} m`;
+      updateRadarScope(cx1, 2.0 + cy1, cx2, 2.0 + cy2, motionMode === 'multi');
 
-      // Chest Breathing Micro-Expansion
+      // Breathing expansion
       const breathingPhase = Math.sin(simTime * 1.7);
-      chestMesh.scale.set(1.0 + 0.05 * breathingPhase, 1.0, 1.0 + 0.08 * breathingPhase);
+      avatar1.chestMesh.scale.set(1.0 + 0.05 * breathingPhase, 1.0, 1.0 + 0.08 * breathingPhase);
 
-      const basePose = [
-        [0.0 + cx, 0.0 + cy, 0.62 + cz],                     // 0: Head
-        [-0.08 + cx, 0.0 + cy, 0.67 + cz], [0.08 + cx, 0.0 + cy, 0.67 + cz], // 1, 2: Eyes
-        [-0.14 + cx, 0.0 + cy, 0.62 + cz], [0.14 + cx, 0.0 + cy, 0.62 + cz], // 3, 4: Ears
-        [-0.28 + cx, 0.0 + cy, 0.44 + cz], [0.28 + cx, 0.0 + cy, 0.44 + cz], // 5, 6: Shoulders
-        [-0.35 + cx + leftArm, 0.1 + cy, 0.18 + cz],        // 7: L Elbow
-        [0.35 + cx + rightArm, -0.1 + cy + (motionMode === 'wave' ? 0.38 : 0), 0.18 + cz + (motionMode === 'wave' ? 0.32 : 0)], // 8: R Elbow
-        [-0.42 + cx + leftArm * 1.5, 0.2 + cy, -0.08 + cz], // 9: L Wrist
-        [0.42 + cx + rightArm * 1.5, -0.2 + cy + (motionMode === 'wave' ? 0.45 : 0), -0.08 + cz + (motionMode === 'wave' ? 0.48 : 0)], // 10: R Wrist
-        [-0.17 + cx, 0.0 + cy, 0.0 + cz], [0.17 + cx, 0.0 + cy, 0.0 + cz],   // 11, 12: Hips
-        [-0.18 + cx + leftLeg, 0.1 + cy, -0.46 + cz],       // 13: L Knee
-        [0.18 + cx + rightLeg, -0.1 + cy, -0.46 + cz],      // 14: R Knee
-        [-0.18 + cx + leftLeg * 1.5, 0.2 + cy, -0.92 + cz], // 15: L Ankle
-        [0.18 + cx + rightLeg * 1.5, -0.2 + cy, -0.92 + cz],// 16: R Ankle
+      // Subject 1 Pose (17 Keypoints)
+      const pose1 = [
+        [0.0 + cx1, 0.0 + cy1, 0.62 + cz1],
+        [-0.08 + cx1, 0.0 + cy1, 0.67 + cz1], [0.08 + cx1, 0.0 + cy1, 0.67 + cz1],
+        [-0.14 + cx1, 0.0 + cy1, 0.62 + cz1], [0.14 + cx1, 0.0 + cy1, 0.62 + cz1],
+        [-0.28 + cx1, 0.0 + cy1, 0.44 + cz1], [0.28 + cx1, 0.0 + cy1, 0.44 + cz1],
+        [-0.35 + cx1 + leftArm1, 0.1 + cy1, 0.18 + cz1],
+        [0.35 + cx1 + rightArm1, -0.1 + cy1 + (motionMode === 'wave' ? 0.38 : 0), 0.18 + cz1 + (motionMode === 'wave' ? 0.32 : 0)],
+        [-0.42 + cx1 + leftArm1 * 1.5, 0.2 + cy1, -0.08 + cz1],
+        [0.42 + cx1 + rightArm1 * 1.5, -0.2 + cy1 + (motionMode === 'wave' ? 0.45 : 0), -0.08 + cz1 + (motionMode === 'wave' ? 0.48 : 0)],
+        [-0.17 + cx1, 0.0 + cy1, 0.0 + cz1], [0.17 + cx1, 0.0 + cy1, 0.0 + cz1],
+        [-0.18 + cx1 + leftLeg1, 0.1 + cy1, -0.46 + cz1],
+        [0.18 + cx1 + rightLeg1, -0.1 + cy1, -0.46 + cz1],
+        [-0.18 + cx1 + leftLeg1 * 1.5, 0.2 + cy1, -0.92 + cz1],
+        [0.18 + cx1 + rightLeg1 * 1.5, -0.2 + cy1, -0.92 + cz1],
       ];
+      avatar1.updatePose(pose1);
 
-      updateHumanAvatarPose(basePose);
+      // Subject 2 Pose (Dual Track)
+      if (motionMode === 'multi') {
+        const pose2 = [
+          [0.0 + cx2, 0.0 + cy2, 0.62 + cz2],
+          [-0.08 + cx2, 0.0 + cy2, 0.67 + cz2], [0.08 + cx2, 0.0 + cy2, 0.67 + cz2],
+          [-0.14 + cx2, 0.0 + cy2, 0.62 + cz2], [0.14 + cx2, 0.0 + cy2, 0.62 + cz2],
+          [-0.28 + cx2, 0.0 + cy2, 0.44 + cz2], [0.28 + cx2, 0.0 + cy2, 0.44 + cz2],
+          [-0.35 + cx2 + leftArm2, 0.1 + cy2, 0.18 + cz2],
+          [0.35 + cx2 + rightArm2, -0.1 + cy2, 0.18 + cz2],
+          [-0.42 + cx2 + leftArm2 * 1.5, 0.2 + cy2, -0.08 + cz2],
+          [0.42 + cx2 + rightArm2 * 1.5, -0.2 + cy2, -0.08 + cz2],
+          [-0.17 + cx2, 0.0 + cy2, 0.0 + cz2], [0.17 + cx2, 0.0 + cy2, 0.0 + cz2],
+          [-0.18 + cx2 + leftLeg2, 0.1 + cy2, -0.46 + cz2],
+          [0.18 + cx2 + rightLeg2, -0.1 + cy2, -0.46 + cz2],
+          [-0.18 + cx2 + leftLeg2 * 1.5, 0.2 + cy2, -0.92 + cz2],
+          [0.18 + cx2 + rightLeg2 * 1.5, -0.2 + cy2, -0.92 + cz2],
+        ];
+        avatar2.updatePose(pose2);
+      }
+
       drawWaveform(breathingPhase);
+      drawSpectrogram(simTime);
     }
 
     // =========================================================================
-    // 8. WebSocket Connection Loop with Resilient Fallback
+    // 9. WebSocket Connection
     // =========================================================================
     let ws;
     function initWebSocket() {
@@ -872,9 +1069,7 @@
             vitalRespEl.textContent = data.vital_signs.respiration_rate_brpm.toFixed(1);
             vitalHeartEl.textContent = data.vital_signs.heart_rate_bpm.toFixed(1);
           }
-          if (data.latency_ms) {
-            latencyEl.textContent = `${data.latency_ms} ms (CUDA FP16)`;
-          }
+          if (data.latency_ms) latencyEl.textContent = `${data.latency_ms} ms (CUDA FP16)`;
         } catch (e) {}
       };
 
@@ -886,7 +1081,7 @@
     initWebSocket();
 
     // =========================================================================
-    // 9. Main Animation Render Loop
+    // 10. Main Animation Loop
     // =========================================================================
     function renderLoop() {
       requestAnimationFrame(renderLoop);

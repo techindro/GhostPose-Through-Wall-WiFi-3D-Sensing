@@ -107,11 +107,13 @@ If you want to explore the foundational research literature, video demonstration
 
 ## Key Capabilities
 
-1. **Through-Wall 3D Skeleton Estimation**: Reconstructs 17 COCO 3D kinematic human stick figures in real-time behind concrete walls.
-2. **Device-Free Multi-Person Tracking & Re-ID**: Simultaneously tracks distinct human targets, preventing identity swaps with ArcFace metric learning and 3D Kalman filtering.
-3. **Contactless Vital Signs Monitoring**: Micro-Doppler phase shift analysis to compute respiration rate (BrPM) and heart rate variations (BPM).
-4. **Lighting & NLoS Invariance**: Fully functional in total darkness, smoke, and non-line-of-sight environments.
-5. **Cross-Modal Teacher-Student Architecture**: Supervised by vision teacher networks (OpenPose/DensePose) with knowledge distillation into a Spatio-Temporal RF Student Network.
+1. **Through-Wall 3D Skeleton Estimation**: Reconstructs 17 COCO 3D kinematic human stick figures and volumetric avatars in real-time behind concrete walls.
+2. **Device-Free Multi-Person Tracking & Re-ID**: Simultaneously tracks multiple distinct human targets (Subject #1 & Subject #2), preventing identity swaps with ArcFace metric learning and 3D Kalman filtering.
+3. **Real-Time Emergency Fall Detection & Dispatcher**: Bio-kinematic state machine calculating vertical velocity drop ($\frac{dz}{dt} < -1.4\,\text{m/s}$) and bounding-box aspect ratio inversion to trigger immediate visual strobe and audio alarms within $150\,\text{ms}$.
+4. **Contactless Vital Signs Monitoring**: Micro-Doppler phase shift analysis to compute respiration rate (BrPM) and heart rate variations (BPM).
+5. **Micro-Doppler Time-Frequency Spectrogram**: Animated energy waterfall tracking human locomotion Doppler frequencies ($\pm 15\,\text{Hz}$).
+6. **Lighting & NLoS Invariance**: Fully functional in total darkness, smoke, and non-line-of-sight environments.
+7. **Cross-Modal Teacher-Student Architecture**: Supervised by vision teacher networks (OpenPose/DensePose) with knowledge distillation into a Spatio-Temporal RF Student Network.
 
 ---
 

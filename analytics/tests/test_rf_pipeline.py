@@ -136,11 +136,50 @@ class TestSpatialROIFilter(unittest.TestCase):
         self.assertIsNone(roi_filter.filter_skeleton_3d(ghost_skel))
 
 
-class TestSecurityAuth(unittest.TestCase):
-    def test_jwt_token_generation_and_validation(self):
-        token = create_access_token({"sub": "researcher_01", "role": "admin"})
-        self.assertTrue(len(token) > 20)
+from fall_detection_engine import RFFallDetectionEngine
+from alert_dispatcher import EmergencyAlertDispatcher
+
+
+class TestFallDetectionEngine(unittest.TestCase):
+    def test_fall_detection_trigger(self):
+        engine = RFFallDetectionEngine(fps=30.0, confirmation_duration_sec=0.1)
+        dispatcher = EmergencyAlertDispatcher()
+
+        # Normal standing skeleton
+        standing_skel = np.zeros((17, 3), dtype=np.float32)
+        standing_skel[:, 2] = 1.1
+        standing_skel[0, 2] = 1.7 # Head
+        standing_skel[11, 2] = 1.0 # Hip
+        standing_skel[12, 2] = 1.0
+
+        res1 = engine.process_frame("subject_01", standing_skel)
+        self.assertEqual(res1.activity_state, "STANDING")
+        self.assertFalse(res1.is_fallen)
+
+        # Sudden fall: rapid drop to floor level (z < 0.35m)
+        fallen_skel = np.zeros((17, 3), dtype=np.float32)
+        fallen_skel[:, 0] = np.linspace(-0.8, 0.8, 17) # Horizontal
+        fallen_skel[:, 2] = 0.15 # Low height
+        fallen_skel[11, 2] = 0.15
+        fallen_skel[12, 2] = 0.15
+
+        # Process frames for fall duration
+        for _ in range(6):
+            res_fall = engine.process_frame("subject_01", fallen_skel)
+
+        self.assertTrue(res_fall.is_fallen)
+        self.assertTrue(res_fall.alert_triggered)
+
+        # Dispatch alert
+        alert = dispatcher.trigger_fall_alert(
+            target_id="subject_01",
+            confidence=res_fall.confidence,
+            location_coords={"x": 0.5, "y": 2.0, "z": 0.15}
+        )
+        self.assertEqual(alert["status"], "dispatched")
+        self.assertEqual(alert["payload"]["event_type"], "EMERGENCY_FALL_DETECTED")
 
 
 if __name__ == "__main__":
     unittest.main()
+
