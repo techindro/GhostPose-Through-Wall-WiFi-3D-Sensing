@@ -577,69 +577,69 @@
         return pGroup;
       }
 
-      // --- HEAD & FACE (Lean, Proportional Human Head) ---
+      // --- HEAD & FACE (Exact Anatomical Sketch Proportion) ---
       const headGroup = new THREE.Group();
-      const craniumGeo = new THREE.SphereGeometry(0.095, 24, 24);
+      const craniumGeo = new THREE.SphereGeometry(0.11, 24, 24);
       craniumGeo.scale(0.9, 1.15, 1.05);
       addSculptedPart(craniumGeo, headGroup);
 
-      const jawGeo = new THREE.CylinderGeometry(0.045, 0.03, 0.08, 16);
+      const jawGeo = new THREE.CylinderGeometry(0.055, 0.035, 0.09, 16);
       jawGeo.scale(0.85, 1.0, 1.15);
       const jaw = addSculptedPart(jawGeo, headGroup);
-      jaw.position.set(0, -0.07, 0.025);
+      jaw.position.set(0, -0.08, 0.03);
 
-      const neckGeo = new THREE.CylinderGeometry(0.042, 0.05, 0.11, 16);
+      const neckGeo = new THREE.CylinderGeometry(0.052, 0.062, 0.12, 16);
       const neck = addSculptedPart(neckGeo, headGroup);
-      neck.position.set(0, -0.12, 0.0);
+      neck.position.set(0, -0.14, 0.0);
       group.add(headGroup);
 
-      // --- TORSO (Slim, Athletic Chest & 6-Pack Abs) ---
+      // --- TORSO (Anatomical Chest, Pectorals & Natural Waist) ---
       const torsoGroup = new THREE.Group();
 
       // Pectoral Plates
-      const pecLeftGeo = new THREE.SphereGeometry(0.075, 16, 16);
+      const pecLeftGeo = new THREE.SphereGeometry(0.095, 16, 16);
       pecLeftGeo.scale(1.1, 0.8, 0.7);
       const pecLeft = addSculptedPart(pecLeftGeo, torsoGroup);
-      pecLeft.position.set(-0.065, 0.05, 0.05);
+      pecLeft.position.set(-0.08, 0.05, 0.065);
 
-      const pecRightGeo = new THREE.SphereGeometry(0.075, 16, 16);
+      const pecRightGeo = new THREE.SphereGeometry(0.095, 16, 16);
       pecRightGeo.scale(1.1, 0.8, 0.7);
       const pecRight = addSculptedPart(pecRightGeo, torsoGroup);
-      pecRight.position.set(0.065, 0.05, 0.05);
+      pecRight.position.set(0.08, 0.05, 0.065);
 
       // Ribcage Core
-      const ribGeo = new THREE.CylinderGeometry(0.15, 0.11, 0.30, 16);
-      ribGeo.scale(1.1, 1.0, 0.8);
+      const ribGeo = new THREE.CylinderGeometry(0.185, 0.14, 0.32, 16);
+      ribGeo.scale(1.12, 1.0, 0.82);
       const ribcage = addSculptedPart(ribGeo, torsoGroup);
       ribcage.position.set(0, 0.02, 0);
 
       // Heart Core Glow
-      const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
-      heartCore.position.set(-0.03, 0.05, 0.045);
+      const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.048, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
+      heartCore.position.set(-0.035, 0.05, 0.055);
       torsoGroup.add(heartCore);
 
-      // 6-Pack Abdominals (Athletic Tapered Waist)
-      const absBaseGeo = new THREE.CylinderGeometry(0.11, 0.115, 0.20, 16);
-      absBaseGeo.scale(1.05, 1.0, 0.8);
+      // 6-Pack Abdominals (Natural Proportions)
+      const absBaseGeo = new THREE.CylinderGeometry(0.14, 0.145, 0.22, 16);
+      absBaseGeo.scale(1.05, 1.0, 0.82);
       const absGroup = addSculptedPart(absBaseGeo, torsoGroup);
-      absGroup.position.set(0, -0.18, 0.0);
+      absGroup.position.set(0, -0.20, 0.0);
 
       for (let r = 0; r < 3; r++) {
         for (let c = -1; c <= 1; c += 2) {
-          const abBlock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.032, 0.02), skinMat);
-          abBlock.position.set(c * 0.028, -0.12 - r * 0.042, 0.08);
+          const abBlock = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.038, 0.025), skinMat);
+          abBlock.position.set(c * 0.036, -0.13 - r * 0.048, 0.10);
           torsoGroup.add(abBlock);
         }
       }
 
-      // Pelvis (Slim Athletic Hips)
-      const pelvisGeo = new THREE.CylinderGeometry(0.12, 0.105, 0.14, 16);
-      pelvisGeo.scale(1.08, 1.0, 0.85);
+      // Pelvis (Natural Hip Proportion)
+      const pelvisGeo = new THREE.CylinderGeometry(0.15, 0.135, 0.16, 16);
+      pelvisGeo.scale(1.1, 1.0, 0.86);
       const pelvisGroup = addSculptedPart(pelvisGeo, group);
 
       group.add(torsoGroup);
 
-      // --- LIMBS (Lean, Athletic Musculature) ---
+      // --- LIMBS (Natural Human Anatomy Proportion) ---
       function buildMuscularLimb(radiusTop, radiusBottom, length) {
         const segGroup = new THREE.Group();
         const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 16);
@@ -658,26 +658,26 @@
         return segGroup;
       }
 
-      const leftUpperArm = buildMuscularLimb(0.042, 0.034, 0.32);
-      const rightUpperArm = buildMuscularLimb(0.042, 0.034, 0.32);
-      const leftForearm = buildMuscularLimb(0.034, 0.026, 0.30);
-      const rightForearm = buildMuscularLimb(0.034, 0.026, 0.30);
+      const leftUpperArm = buildMuscularLimb(0.056, 0.044, 0.32);
+      const rightUpperArm = buildMuscularLimb(0.056, 0.044, 0.32);
+      const leftForearm = buildMuscularLimb(0.044, 0.034, 0.30);
+      const rightForearm = buildMuscularLimb(0.044, 0.034, 0.30);
 
       // Hands
-      const handGeo = new THREE.BoxGeometry(0.035, 0.08, 0.02);
+      const handGeo = new THREE.BoxGeometry(0.045, 0.095, 0.028);
       handGeo.translate(0, -0.32, 0);
       leftForearm.add(new THREE.Mesh(handGeo, skinMat));
       rightForearm.add(new THREE.Mesh(handGeo, skinMat));
 
-      // Legs (Lean Athletic Quadriceps & Calves)
-      const leftThigh = buildMuscularLimb(0.065, 0.048, 0.44);
-      const rightThigh = buildMuscularLimb(0.065, 0.048, 0.44);
-      const leftCalf = buildMuscularLimb(0.048, 0.034, 0.44);
-      const rightCalf = buildMuscularLimb(0.048, 0.034, 0.44);
+      // Legs (Natural Thighs & Calves)
+      const leftThigh = buildMuscularLimb(0.085, 0.062, 0.44);
+      const rightThigh = buildMuscularLimb(0.085, 0.062, 0.44);
+      const leftCalf = buildMuscularLimb(0.062, 0.044, 0.44);
+      const rightCalf = buildMuscularLimb(0.062, 0.044, 0.44);
 
       // Feet
-      const footGeo = new THREE.BoxGeometry(0.055, 0.035, 0.14);
-      footGeo.translate(0, -0.44, 0.045);
+      const footGeo = new THREE.BoxGeometry(0.07, 0.045, 0.16);
+      footGeo.translate(0, -0.44, 0.05);
       leftCalf.add(new THREE.Mesh(footGeo, skinMat));
       rightCalf.add(new THREE.Mesh(footGeo, skinMat));
 
