@@ -1,6 +1,4 @@
-# Wi-Fi--Sensing-ESP32-
-
-# Wi-Fi Sensing & Motion Detection using ESP32 CSI
+## Wi-Fi Sensing & Motion Detection using ESP32 CSI
 
 This project demonstrates how to use Wi-fi Channel State Information (CSI) from cheap ESP32 boards to detect human presence and motion behinds without any cameras, inspired by MIT's RF-Pose concept.
 
