@@ -521,6 +521,14 @@
     gridFloor.position.y = 0;
     scene.add(gridFloor);
 
+    // Laser Floor Scan Beam
+    const laserPlaneGeo = new THREE.PlaneGeometry(14, 0.08);
+    const laserPlaneMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+    const laserSweep = new THREE.Mesh(laserPlaneGeo, laserPlaneMat);
+    laserSweep.rotation.x = Math.PI / 2;
+    laserSweep.position.y = 0.01;
+    scene.add(laserSweep);
+
     // =========================================================================
     // 4. High-Definition Sculpted Anatomical Human Mannequin (Matches AI Image)
     // =========================================================================
