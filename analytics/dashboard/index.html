@@ -492,35 +492,37 @@
     scene.add(heartPulsingLight);
 
     // =========================================================================
-    // 3. Cyber Grid Floor & Laser Scan
+    // 3. Laboratory Holographic Chamber & Coordinate Bounding Cage (Matches Image)
     // =========================================================================
+    const chamberGroup = new THREE.Group();
+    scene.add(chamberGroup);
+
+    // Glass Chamber Frame Pillars (4 Vertical Neon Pillars)
+    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.9, roughness: 0.1 });
+    const pillarGlowMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+    [[-1.8, -1.8], [1.8, -1.8], [-1.8, 1.8], [1.8, 1.8]].forEach(([px, pz]) => {
+      const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 3.2, 16), pillarMat);
+      pillar.position.set(px, 1.6, pz);
+      const pillarCore = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 3.2, 8), pillarGlowMat);
+      pillarCore.position.set(px, 1.6, pz);
+      chamberGroup.add(pillar);
+      chamberGroup.add(pillarCore);
+    });
+
+    // 3D Coordinate Grid Bounding Box with Axis Ticks
+    const cageGeo = new THREE.BoxGeometry(3.6, 3.2, 3.6);
+    const cageMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, wireframe: true, transparent: true, opacity: 0.15 });
+    const cageMesh = new THREE.Mesh(cageGeo, cageMat);
+    cageMesh.position.set(0, 1.6, 0);
+    chamberGroup.add(cageMesh);
+
+    // Laser Coordinate Floor with Center Crosshair
     const gridFloor = new THREE.GridHelper(14, 28, 0x00f0ff, 0x0f172a);
     gridFloor.position.y = 0;
     scene.add(gridFloor);
 
-    const laserPlaneGeo = new THREE.PlaneGeometry(14, 0.08);
-    const laserPlaneMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-    const laserSweep = new THREE.Mesh(laserPlaneGeo, laserPlaneMat);
-    laserSweep.rotation.x = Math.PI / 2;
-    laserSweep.position.y = 0.01;
-    scene.add(laserSweep);
-
-    // Simulated 3-Antenna Wi-Fi Array
-    const antennaGroup = new THREE.Group();
-    for (let i = -1; i <= 1; i++) {
-      const antMast = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 16), new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.8 }));
-      const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f0ff }));
-      antTip.position.y = 0.25;
-      const singleAnt = new THREE.Group();
-      singleAnt.add(antMast);
-      singleAnt.add(antTip);
-      singleAnt.position.set(i * 0.6, 0.25, -2.8);
-      antennaGroup.add(singleAnt);
-    }
-    scene.add(antennaGroup);
-
     // =========================================================================
-    // 4. Realistic Anatomical Human Mannequin Avatar (Smooth Human Silhouette)
+    // 4. High-Definition Sculpted Anatomical Human Mannequin (Matches AI Image)
     // =========================================================================
     const COCO_BONES = [
       [0, 1], [0, 2], [1, 3], [2, 4],             // Head
@@ -529,134 +531,156 @@
       [11, 13], [13, 15], [12, 14], [14, 16]      // Lower Body
     ];
 
-    function createRealisticHumanAvatar(themeColorHex = 0x00f0ff) {
+    function createHighDefHumanAvatar(themeColorHex = 0x00f0ff) {
       const group = new THREE.Group();
 
-      // Smooth Photorealistic Holographic Skin (Dual Layer: Solid Glow + Topographic Wireframe)
-      const skinMat = new THREE.MeshPhysicalMaterial({
+      // Glowing Cyan Holographic Skin Shader
+      const skinMat = new THREE.MeshStandardMaterial({
         color: themeColorHex,
         emissive: themeColorHex,
-        emissiveIntensity: 0.45,
-        roughness: 0.15,
-        metalness: 0.7,
-        transmission: 0.3,
+        emissiveIntensity: 0.55,
+        roughness: 0.1,
+        metalness: 0.85,
         transparent: true,
-        opacity: 0.88,
-        wireframe: false,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.1
+        opacity: 0.92
       });
 
+      // Topographic Wireframe Mesh
       const wireMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         wireframe: true,
         transparent: true,
-        opacity: 0.35
+        opacity: 0.38
       });
 
-      function createMuscularPart(geom) {
+      function addSculptedPart(geometry, parent = group) {
         const pGroup = new THREE.Group();
-        const m1 = new THREE.Mesh(geom, skinMat);
-        const m2 = new THREE.Mesh(geom, wireMat);
+        const m1 = new THREE.Mesh(geometry, skinMat);
+        const m2 = new THREE.Mesh(geometry, wireMat);
         pGroup.add(m1);
         pGroup.add(m2);
-        group.add(pGroup);
+        parent.add(pGroup);
         return pGroup;
       }
 
-      // 1. Head, Jaw & Neck (Realistic Human Head Contour)
-      const headComposite = new THREE.Group();
-      // Cranium
+      // --- HEAD & FACE ---
+      const headGroup = new THREE.Group();
+      // Cranium & Temples
       const craniumGeo = new THREE.SphereGeometry(0.125, 32, 32);
-      craniumGeo.scale(0.9, 1.15, 1.05);
-      const craniumMesh = new THREE.Mesh(craniumGeo, skinMat);
-      const craniumWire = new THREE.Mesh(craniumGeo, wireMat);
-      headComposite.add(craniumMesh);
-      headComposite.add(craniumWire);
+      craniumGeo.scale(0.88, 1.15, 1.05);
+      addSculptedPart(craniumGeo, headGroup);
 
-      // Chin / Jaw
-      const jawGeo = new THREE.CylinderGeometry(0.06, 0.04, 0.1, 16);
-      jawGeo.scale(0.8, 1.0, 1.1);
-      const jawMesh = new THREE.Mesh(jawGeo, skinMat);
-      jawMesh.position.set(0, -0.09, 0.03);
-      headComposite.add(jawMesh);
+      // Chin & Jawline
+      const jawGeo = new THREE.CylinderGeometry(0.065, 0.04, 0.11, 16);
+      jawGeo.scale(0.85, 1.0, 1.15);
+      const jaw = addSculptedPart(jawGeo, headGroup);
+      jaw.position.set(0, -0.09, 0.035);
 
-      // Cervical Neck
-      const neckGeo = new THREE.CylinderGeometry(0.065, 0.075, 0.12, 16);
-      const neckMesh = new THREE.Mesh(neckGeo, skinMat);
-      neckMesh.position.set(0, -0.16, 0.0);
-      headComposite.add(neckMesh);
-      group.add(headComposite);
+      // Trapezius / Muscular Neck
+      const neckGeo = new THREE.CylinderGeometry(0.07, 0.085, 0.14, 20);
+      const neck = addSculptedPart(neckGeo, headGroup);
+      neck.position.set(0, -0.16, 0.0);
+      group.add(headGroup);
 
-      // 2. Anatomical Torso & Chest (Pectorals, Ribcage & Latissimus)
-      // Upper Chest & Pectorals
-      const chestGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.32, 24);
-      chestGeo.scale(1.15, 1.0, 0.85); // Wider at shoulders, flatter front-to-back
-      const chestGroup = createMuscularPart(chestGeo);
+      // --- TORSO (Pectorals, 6-Pack Abs & Latissimus) ---
+      const torsoGroup = new THREE.Group();
+
+      // Pectoral Muscle Plates (Left & Right Chest)
+      const pecLeftGeo = new THREE.SphereGeometry(0.12, 24, 24);
+      pecLeftGeo.scale(1.1, 0.8, 0.7);
+      const pecLeft = addSculptedPart(pecLeftGeo, torsoGroup);
+      pecLeft.position.set(-0.1, 0.06, 0.08);
+
+      const pecRightGeo = new THREE.SphereGeometry(0.12, 24, 24);
+      pecRightGeo.scale(1.1, 0.8, 0.7);
+      const pecRight = addSculptedPart(pecRightGeo, torsoGroup);
+      pecRight.position.set(0.1, 0.06, 0.08);
+
+      // Ribcage & Lats Core
+      const ribGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.36, 24);
+      ribGeo.scale(1.15, 1.0, 0.85);
+      const ribcage = addSculptedPart(ribGeo, torsoGroup);
+      ribcage.position.set(0, 0.02, 0);
 
       // Heart Core Glow
       const heartCore = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 16), new THREE.MeshBasicMaterial({ color: 0xf43f5e }));
-      heartCore.position.set(-0.04, 0.05, 0.04);
-      chestGroup.add(heartCore);
+      heartCore.position.set(-0.04, 0.05, 0.06);
+      torsoGroup.add(heartCore);
 
-      // Abdomen & Tapered Waist
-      const absGeo = new THREE.CylinderGeometry(0.175, 0.18, 0.22, 24);
-      absGeo.scale(1.05, 1.0, 0.8);
-      const absGroup = createMuscularPart(absGeo);
+      // 6-Pack Abdominals Grid
+      const absBaseGeo = new THREE.CylinderGeometry(0.175, 0.18, 0.24, 24);
+      absBaseGeo.scale(1.05, 1.0, 0.82);
+      const absGroup = addSculptedPart(absBaseGeo, torsoGroup);
+      absGroup.position.set(0, -0.22, 0.0);
 
-      // Pelvis & Hips
-      const pelvisGeo = new THREE.CylinderGeometry(0.18, 0.17, 0.18, 24);
-      pelvisGeo.scale(1.1, 1.0, 0.85);
-      const pelvisGroup = createMuscularPart(pelvisGeo);
+      // Abdominal Muscle Ridges
+      for (let r = 0; r < 3; r++) {
+        for (let c = -1; c <= 1; c += 2) {
+          const abBlock = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.045, 0.03), skinMat);
+          abBlock.position.set(c * 0.045, -0.15 - r * 0.055, 0.12);
+          torsoGroup.add(abBlock);
+        }
+      }
 
-      // 3. Anatomical Limbs (Deltoid Caps, Biceps, Forearms, Hands, Thighs, Calves, Feet)
-      function buildAnatomicalSegment(radiusTop, radiusBottom, length, taperCurve = 1.0) {
+      // Pelvis & Glutes
+      const pelvisGeo = new THREE.CylinderGeometry(0.185, 0.17, 0.18, 24);
+      pelvisGeo.scale(1.12, 1.0, 0.88);
+      const pelvisGroup = addSculptedPart(pelvisGeo, group);
+
+      group.add(torsoGroup);
+
+      // --- SCULPTED ARMS (Deltoids, Biceps, Forearms, Hands) ---
+      function buildMuscularLimb(radiusTop, radiusBottom, length, taperCurve = 1.0) {
         const segGroup = new THREE.Group();
         const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 24);
         geom.scale(taperCurve, 1.0, 1.0);
-        geom.translate(0, -length / 2, 0); // Pivot at joint top
+        geom.translate(0, -length / 2, 0);
+
         const m1 = new THREE.Mesh(geom, skinMat);
         const m2 = new THREE.Mesh(geom, wireMat);
         segGroup.add(m1);
         segGroup.add(m2);
 
-        // Smooth Joint Contour Sphere
-        const jointCap = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.05, 20, 20), skinMat);
+        // Rounded Muscle Joint Cap
+        const jointCap = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.1, 20, 20), skinMat);
         segGroup.add(jointCap);
 
         group.add(segGroup);
         return segGroup;
       }
 
-      // Upper Arms (Muscular Deltoids & Biceps)
-      const leftUpperArm = buildAnatomicalSegment(0.072, 0.058, 0.32, 1.05);
-      const rightUpperArm = buildAnatomicalSegment(0.072, 0.058, 0.32, 1.05);
+      const leftUpperArm = buildMuscularLimb(0.075, 0.058, 0.32, 1.1);
+      const rightUpperArm = buildMuscularLimb(0.075, 0.058, 0.32, 1.1);
 
-      // Forearms & Hands
-      const leftForearm = buildAnatomicalSegment(0.058, 0.042, 0.30, 0.95);
-      const rightForearm = buildAnatomicalSegment(0.058, 0.042, 0.30, 0.95);
-      
-      // Hands (Sculpted organic palms)
-      const handGeo = new THREE.BoxGeometry(0.05, 0.1, 0.03);
-      handGeo.translate(0, -0.32, 0);
+      const leftForearm = buildMuscularLimb(0.058, 0.042, 0.30, 1.0);
+      const rightForearm = buildMuscularLimb(0.058, 0.042, 0.30, 1.0);
+
+      // Hands with sculpt palm & fingers
+      const handGeo = new THREE.BoxGeometry(0.055, 0.11, 0.035);
+      handGeo.translate(0, -0.33, 0);
       leftForearm.add(new THREE.Mesh(handGeo, skinMat));
       rightForearm.add(new THREE.Mesh(handGeo, skinMat));
 
-      // Thighs (Sculpted Muscular Quadriceps)
-      const leftThigh = buildAnatomicalSegment(0.105, 0.078, 0.44, 1.1);
-      const rightThigh = buildAnatomicalSegment(0.105, 0.078, 0.44, 1.1);
+      // --- SCULPTED LEGS (Quadriceps, Kneecaps, Calves, Feet) ---
+      const leftThigh = buildMuscularLimb(0.11, 0.08, 0.44, 1.15);
+      const rightThigh = buildMuscularLimb(0.11, 0.08, 0.44, 1.15);
 
-      // Calves & Shins
-      const leftCalf = buildAnatomicalSegment(0.082, 0.055, 0.44, 1.05);
-      const rightCalf = buildAnatomicalSegment(0.082, 0.055, 0.44, 1.05);
+      const leftCalf = buildMuscularLimb(0.085, 0.056, 0.44, 1.1);
+      const rightCalf = buildMuscularLimb(0.085, 0.056, 0.44, 1.1);
 
-      // Feet / Shoes (Human Foot Soles)
-      const footGeo = new THREE.BoxGeometry(0.08, 0.05, 0.18);
-      footGeo.translate(0, -0.44, 0.05);
+      // Kneecaps (Patella)
+      const kneeGeo = new THREE.SphereGeometry(0.045, 16, 16);
+      kneeGeo.scale(1.0, 1.0, 0.6);
+      leftThigh.add(new THREE.Mesh(kneeGeo, skinMat));
+      rightThigh.add(new THREE.Mesh(kneeGeo, skinMat));
+
+      // Sculpted Feet
+      const footGeo = new THREE.BoxGeometry(0.085, 0.055, 0.2);
+      footGeo.translate(0, -0.44, 0.06);
       leftCalf.add(new THREE.Mesh(footGeo, skinMat));
       rightCalf.add(new THREE.Mesh(footGeo, skinMat));
 
-      // 4. Kinematic Joint Nodes & Bones (Inner Matrix)
+      // 17 Nodes & Bones
       const jointMeshes = [];
       const boneMeshes = [];
       const jointGeo = new THREE.SphereGeometry(0.025, 16, 16);
@@ -675,19 +699,13 @@
         boneMeshes.push(bm);
       });
 
-      // Ground Projection Hologram Disc
+      // Ground Target Disc
       const discGeo = new THREE.RingGeometry(0.15, 0.85, 32);
       const discMat = new THREE.MeshBasicMaterial({ color: themeColorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
       const groundDisc = new THREE.Mesh(discGeo, discMat);
       groundDisc.rotation.x = -Math.PI / 2;
       groundDisc.position.y = 0.02;
       scene.add(groundDisc);
-
-      // Bounding Box
-      const bboxGeo = new THREE.BoxGeometry(1.0, 1.95, 0.85);
-      const bboxMat = new THREE.MeshBasicMaterial({ color: themeColorHex, wireframe: true, transparent: true, opacity: 0.2 });
-      const bboxMesh = new THREE.Mesh(bboxGeo, bboxMat);
-      scene.add(bboxMesh);
 
       function positionLimbGroup(lg, pStart, pEnd) {
         lg.position.copy(pStart);
@@ -713,27 +731,18 @@
           boneMeshes[idx].quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(p2, p1).normalize());
         });
 
-        // Head Position
-        headComposite.position.copy(p[0]);
+        headGroup.position.copy(p[0]);
 
         const midShoulder = new THREE.Vector3().addVectors(p[5], p[6]).multiplyScalar(0.5);
         const midHip = new THREE.Vector3().addVectors(p[11], p[12]).multiplyScalar(0.5);
 
-        // Upper Chest
-        const chestPos = new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.08, 0));
-        chestGroup.position.copy(chestPos);
+        const chestPos = new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5).add(new THREE.Vector3(0, 0.06, 0));
+        torsoGroup.position.copy(chestPos);
         const torsoDir = new THREE.Vector3().subVectors(midShoulder, midHip);
-        chestGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
+        torsoGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir.clone().normalize());
 
-        // Abdomen
-        const absPos = new THREE.Vector3().addVectors(midShoulder, midHip).multiplyScalar(0.5).add(new THREE.Vector3(0, -0.06, 0));
-        absGroup.position.copy(absPos);
-        absGroup.quaternion.copy(chestGroup.quaternion);
-
-        // Pelvis
         pelvisGroup.position.copy(midHip);
 
-        // Limbs
         positionLimbGroup(leftUpperArm, p[5], p[7]);
         positionLimbGroup(leftForearm, p[7], p[9]);
         positionLimbGroup(rightUpperArm, p[6], p[8]);
@@ -745,41 +754,37 @@
         positionLimbGroup(rightCalf, p[14], p[16]);
 
         groundDisc.position.set(midHip.x, 0.02, midHip.z);
-        bboxMesh.position.set(midHip.x, 1.0, midHip.z);
       }
 
       function setVisibility(val) {
         group.visible = val;
         groundDisc.visible = val;
-        bboxMesh.visible = val;
       }
 
       function setMeshStyle(mode) {
         if (mode === 'skel') {
-          headComposite.visible = false;
-          chestGroup.visible = false;
-          absGroup.visible = false;
+          headGroup.visible = false;
+          torsoGroup.visible = false;
           pelvisGroup.visible = false;
           [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = false);
         } else {
-          headComposite.visible = true;
-          chestGroup.visible = true;
-          absGroup.visible = true;
+          headGroup.visible = true;
+          torsoGroup.visible = true;
           pelvisGroup.visible = true;
           [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
           skinMat.wireframe = (mode === 'wire');
-          skinMat.opacity = (mode === 'wire' ? 0.35 : 0.88);
+          skinMat.opacity = (mode === 'wire' ? 0.35 : 0.92);
         }
       }
 
-      return { group, updatePose, setVisibility, setMeshStyle, chestMesh: chestGroup, heartCore };
+      return { group, updatePose, setVisibility, setMeshStyle, chestMesh: torsoGroup, heartCore };
     }
 
-    // Instantiate Avatar 1 (Cyan Human Mannequin) and Avatar 2 (Purple Human Mannequin)
-    const avatar1 = createRealisticHumanAvatar(0x00f0ff);
+    // Instantiate Avatar 1 & Avatar 2
+    const avatar1 = createHighDefHumanAvatar(0x00f0ff);
     scene.add(avatar1.group);
 
-    const avatar2 = createRealisticHumanAvatar(0xc084fc);
+    const avatar2 = createHighDefHumanAvatar(0xc084fc);
     scene.add(avatar2.group);
     avatar2.setVisibility(false);
 
