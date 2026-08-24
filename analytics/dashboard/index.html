@@ -534,23 +534,19 @@
     function createHighDefHumanAvatar(themeColorHex = 0x00f0ff) {
       const group = new THREE.Group();
 
-      // Glowing Cyan Holographic Skin Shader
-      const skinMat = new THREE.MeshStandardMaterial({
+      // Radiant Self-Illuminating Cyan Holographic Material (Guaranteed Bright Visibility)
+      const skinMat = new THREE.MeshBasicMaterial({
         color: themeColorHex,
-        emissive: themeColorHex,
-        emissiveIntensity: 0.55,
-        roughness: 0.1,
-        metalness: 0.85,
         transparent: true,
-        opacity: 0.92
+        opacity: 0.82
       });
 
-      // Topographic Wireframe Mesh
+      // Bright Topographic Wireframe Contour Grid
       const wireMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         wireframe: true,
         transparent: true,
-        opacity: 0.38
+        opacity: 0.75
       });
 
       function addSculptedPart(geometry, parent = group) {
@@ -565,39 +561,36 @@
 
       // --- HEAD & FACE ---
       const headGroup = new THREE.Group();
-      // Cranium & Temples
-      const craniumGeo = new THREE.SphereGeometry(0.125, 32, 32);
-      craniumGeo.scale(0.88, 1.15, 1.05);
+      const craniumGeo = new THREE.SphereGeometry(0.13, 24, 24);
+      craniumGeo.scale(0.9, 1.15, 1.05);
       addSculptedPart(craniumGeo, headGroup);
 
-      // Chin & Jawline
       const jawGeo = new THREE.CylinderGeometry(0.065, 0.04, 0.11, 16);
       jawGeo.scale(0.85, 1.0, 1.15);
       const jaw = addSculptedPart(jawGeo, headGroup);
       jaw.position.set(0, -0.09, 0.035);
 
-      // Trapezius / Muscular Neck
-      const neckGeo = new THREE.CylinderGeometry(0.07, 0.085, 0.14, 20);
+      const neckGeo = new THREE.CylinderGeometry(0.07, 0.085, 0.14, 16);
       const neck = addSculptedPart(neckGeo, headGroup);
       neck.position.set(0, -0.16, 0.0);
       group.add(headGroup);
 
-      // --- TORSO (Pectorals, 6-Pack Abs & Latissimus) ---
+      // --- TORSO (Chest, 6-Pack Abs & Pelvis) ---
       const torsoGroup = new THREE.Group();
 
-      // Pectoral Muscle Plates (Left & Right Chest)
-      const pecLeftGeo = new THREE.SphereGeometry(0.12, 24, 24);
+      // Pectoral Plates
+      const pecLeftGeo = new THREE.SphereGeometry(0.12, 16, 16);
       pecLeftGeo.scale(1.1, 0.8, 0.7);
       const pecLeft = addSculptedPart(pecLeftGeo, torsoGroup);
       pecLeft.position.set(-0.1, 0.06, 0.08);
 
-      const pecRightGeo = new THREE.SphereGeometry(0.12, 24, 24);
+      const pecRightGeo = new THREE.SphereGeometry(0.12, 16, 16);
       pecRightGeo.scale(1.1, 0.8, 0.7);
       const pecRight = addSculptedPart(pecRightGeo, torsoGroup);
       pecRight.position.set(0.1, 0.06, 0.08);
 
-      // Ribcage & Lats Core
-      const ribGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.36, 24);
+      // Ribcage Core
+      const ribGeo = new THREE.CylinderGeometry(0.24, 0.18, 0.36, 16);
       ribGeo.scale(1.15, 1.0, 0.85);
       const ribcage = addSculptedPart(ribGeo, torsoGroup);
       ribcage.position.set(0, 0.02, 0);
@@ -607,13 +600,12 @@
       heartCore.position.set(-0.04, 0.05, 0.06);
       torsoGroup.add(heartCore);
 
-      // 6-Pack Abdominals Grid
-      const absBaseGeo = new THREE.CylinderGeometry(0.175, 0.18, 0.24, 24);
+      // 6-Pack Abdominals
+      const absBaseGeo = new THREE.CylinderGeometry(0.175, 0.18, 0.24, 16);
       absBaseGeo.scale(1.05, 1.0, 0.82);
       const absGroup = addSculptedPart(absBaseGeo, torsoGroup);
       absGroup.position.set(0, -0.22, 0.0);
 
-      // Abdominal Muscle Ridges
       for (let r = 0; r < 3; r++) {
         for (let c = -1; c <= 1; c += 2) {
           const abBlock = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.045, 0.03), skinMat);
@@ -622,18 +614,17 @@
         }
       }
 
-      // Pelvis & Glutes
-      const pelvisGeo = new THREE.CylinderGeometry(0.185, 0.17, 0.18, 24);
+      // Pelvis
+      const pelvisGeo = new THREE.CylinderGeometry(0.185, 0.17, 0.18, 16);
       pelvisGeo.scale(1.12, 1.0, 0.88);
       const pelvisGroup = addSculptedPart(pelvisGeo, group);
 
       group.add(torsoGroup);
 
-      // --- SCULPTED ARMS (Deltoids, Biceps, Forearms, Hands) ---
-      function buildMuscularLimb(radiusTop, radiusBottom, length, taperCurve = 1.0) {
+      // --- LIMBS ---
+      function buildMuscularLimb(radiusTop, radiusBottom, length) {
         const segGroup = new THREE.Group();
-        const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 24);
-        geom.scale(taperCurve, 1.0, 1.0);
+        const geom = new THREE.CylinderGeometry(radiusTop, radiusBottom, length, 16);
         geom.translate(0, -length / 2, 0);
 
         const m1 = new THREE.Mesh(geom, skinMat);
@@ -641,40 +632,32 @@
         segGroup.add(m1);
         segGroup.add(m2);
 
-        // Rounded Muscle Joint Cap
-        const jointCap = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.1, 20, 20), skinMat);
+        const jointCap = new THREE.Mesh(new THREE.SphereGeometry(radiusTop * 1.1, 16, 16), skinMat);
         segGroup.add(jointCap);
 
+        segGroup.userData.defaultLen = length;
         group.add(segGroup);
         return segGroup;
       }
 
-      const leftUpperArm = buildMuscularLimb(0.075, 0.058, 0.32, 1.1);
-      const rightUpperArm = buildMuscularLimb(0.075, 0.058, 0.32, 1.1);
+      const leftUpperArm = buildMuscularLimb(0.075, 0.058, 0.32);
+      const rightUpperArm = buildMuscularLimb(0.075, 0.058, 0.32);
+      const leftForearm = buildMuscularLimb(0.058, 0.042, 0.30);
+      const rightForearm = buildMuscularLimb(0.058, 0.042, 0.30);
 
-      const leftForearm = buildMuscularLimb(0.058, 0.042, 0.30, 1.0);
-      const rightForearm = buildMuscularLimb(0.058, 0.042, 0.30, 1.0);
-
-      // Hands with sculpt palm & fingers
+      // Hands
       const handGeo = new THREE.BoxGeometry(0.055, 0.11, 0.035);
       handGeo.translate(0, -0.33, 0);
       leftForearm.add(new THREE.Mesh(handGeo, skinMat));
       rightForearm.add(new THREE.Mesh(handGeo, skinMat));
 
-      // --- SCULPTED LEGS (Quadriceps, Kneecaps, Calves, Feet) ---
-      const leftThigh = buildMuscularLimb(0.11, 0.08, 0.44, 1.15);
-      const rightThigh = buildMuscularLimb(0.11, 0.08, 0.44, 1.15);
+      // Legs
+      const leftThigh = buildMuscularLimb(0.11, 0.08, 0.44);
+      const rightThigh = buildMuscularLimb(0.11, 0.08, 0.44);
+      const leftCalf = buildMuscularLimb(0.085, 0.056, 0.44);
+      const rightCalf = buildMuscularLimb(0.085, 0.056, 0.44);
 
-      const leftCalf = buildMuscularLimb(0.085, 0.056, 0.44, 1.1);
-      const rightCalf = buildMuscularLimb(0.085, 0.056, 0.44, 1.1);
-
-      // Kneecaps (Patella)
-      const kneeGeo = new THREE.SphereGeometry(0.045, 16, 16);
-      kneeGeo.scale(1.0, 1.0, 0.6);
-      leftThigh.add(new THREE.Mesh(kneeGeo, skinMat));
-      rightThigh.add(new THREE.Mesh(kneeGeo, skinMat));
-
-      // Sculpted Feet
+      // Feet
       const footGeo = new THREE.BoxGeometry(0.085, 0.055, 0.2);
       footGeo.translate(0, -0.44, 0.06);
       leftCalf.add(new THREE.Mesh(footGeo, skinMat));
@@ -711,8 +694,9 @@
         lg.position.copy(pStart);
         const dir = new THREE.Vector3().subVectors(pEnd, pStart);
         const len = dir.length();
+        const baseLen = lg.userData.defaultLen || 0.32;
         lg.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), dir.clone().normalize());
-        lg.scale.set(1, len / 0.32, 1);
+        lg.scale.set(1, Math.max(len / baseLen, 0.1), 1);
       }
 
       function updatePose(kpts) {
@@ -773,7 +757,7 @@
           pelvisGroup.visible = true;
           [leftUpperArm, rightUpperArm, leftForearm, rightForearm, leftThigh, rightThigh, leftCalf, rightCalf].forEach(l => l.visible = true);
           skinMat.wireframe = (mode === 'wire');
-          skinMat.opacity = (mode === 'wire' ? 0.35 : 0.92);
+          skinMat.opacity = (mode === 'wire' ? 0.35 : 0.82);
         }
       }
 
