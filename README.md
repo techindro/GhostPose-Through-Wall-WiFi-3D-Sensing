@@ -1,4 +1,4 @@
-# RF-Sense3D: Edge-Scalable Through-the-Wall Wi-Fi Sensing System
+# GhostPose: Edge-Scalable Through-the-Wall Wi-Fi 3D Sensing System
 
 A production-grade, hardware-agnostic architecture for **Passive Through-the-Wall Human Sensing**, **3D Skeleton Reconstruction**, and **Contactless Vital Signs Monitoring** using raw Wi-Fi Channel State Information (CSI) or RF raw payloads, completely bypassing the need for wearable sensors or optical cameras.
 
@@ -225,8 +225,8 @@ Evaluated on through-wall multipath indoor environments (3.0m x 4.0m testbed):
 ### 1. Installation
 ```bash
 # Clone the repository
-git clone https://github.com/techindro/Wi-Fi-Sensing-ESP32-.git
-cd Wi-Fi-Sensing-ESP32-
+git clone https://github.com/techindro/GhostPose-Through-Wall-WiFi-3D-Sensing.git
+cd GhostPose-Through-Wall-WiFi-3D-Sensing
 
 # Install Python requirements
 pip install -r analytics/requirements.txt
