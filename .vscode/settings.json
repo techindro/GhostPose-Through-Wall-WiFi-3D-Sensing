@@ -11,10 +11,12 @@
     "reportMissingImports": "none",
     "reportMissingModuleSource": "none",
     "reportUnusedImport": "none",
-    "reportGeneralTypeIssues": "none"
+    "reportGeneralTypeIssues": "none",
+    "reportUndefinedVariable": "none"
   },
   "C_Cpp.errorSquiggles": "disabled",
   "C_Cpp.intelliSenseEngine": "disabled",
+  "C_Cpp.default.compilerPath": "",
   "clangd.fallbackFlags": [
     "-std=c++17",
     "-DARDUINO=10800",
@@ -30,5 +32,7 @@
     "*.ino": "cpp"
   },
   "ccls.diagnostics.enable": false,
-  "clangd.checkUpdates": false
+  "clangd.checkUpdates": false,
+  "html.validate.scripts": false,
+  "html.validate.styles": false
 }
