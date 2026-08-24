@@ -8,6 +8,71 @@ A production-grade, hardware-agnostic architecture for **Passive Through-the-Wal
 
 ---
 
+## 🛠️ Complete Technology Stack
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                           RF-SENSE3D ECOSYSTEM                          │
+├───────────────────┬────────────────────────────┬────────────────────────┤
+│  EMBEDDED & PHY   │   DSP & DEEP LEARNING AI   │   BACKEND & 3D UI/UX   │
+├───────────────────┼────────────────────────────┼────────────────────────┤
+│ • C++ / Arduino   │ • PyTorch (CUDA FP16)      │ • FastAPI & WebSockets │
+│ • ESP-IDF CSI API │ • SciPy & NumPy DSP        │ • Three.js (WebGL 3D)  │
+│ • 802.11 OFDM PHY │ • Spatio-Temporal 2D+1D    │ • Apache Kafka Streams │
+│ • PySerial Bridge │ • Temporal Self-Attention  │ • Tailwind Glassmorphic│
+│ • 921.6k Baud DMA │ • ArcFace Re-ID Learning   │ • Docker & Kubernetes  │
+│ • 64 Subcarriers  │ • 3D Kalman Multi-Tracking │ • Supabase Telemetry   │
+└───────────────────┴────────────────────────────┴────────────────────────┘
+```
+
+### 1. Embedded Firmware & Physical Layer (PHY)
+* **C++ / Arduino Core for ESP32**: High-performance firmware running promiscuous Wi-Fi frame sniffing and packet injection.
+* **ESP-IDF CSI API (`esp_wifi_set_csi_rx_cb`)**: Real-time extraction of raw 64 OFDM subcarrier complex $I/Q$ channel matrices.
+* **DMA Ring Buffering & Serial Streaming**: Custom high-throughput async gateway streaming at **921,600 baud** over USB/UART without packet drops.
+
+### 2. Digital Signal Processing (DSP) & Phase Calibration
+* **Linear Phase Sanitization**: Removes Subcarrier Frequency Offset (SFO) linear phase tilt and Carrier Frequency Offset (CFO) random intercept via least-squares phase unwrapping.
+* **Recursive EMA Static Clutter Removal**: Exponential moving average filtering to eliminate static multipath reflections from concrete walls and furniture.
+* **Dual Butterworth IIR Filter Banks**:
+  * **Locomotion Filter**: $0.5 - 5.0\,\text{Hz}$ (Walking gaits, limbs, torso gestures).
+  * **Respiration Filter**: $0.1 - 0.45\,\text{Hz}$ (Contactless chest wall expansion: $6 - 27\,\text{BrPM}$).
+  * **Cardiac Filter**: $0.8 - 2.5\,\text{Hz}$ (Micro-Doppler heart rate harmonics: $48 - 150\,\text{BPM}$).
+* **1D/2D FFT & Doppler Spectrograms**: Real-time extraction of micro-Doppler velocity shifts and spectrogram energy waterfalls.
+
+### 3. Deep Learning & Kinematic AI Architecture
+* **PyTorch (CUDA Accelerated)**: GPU FP16 mixed-precision tensor processing engine running at **100+ FPS**.
+* **Spatio-Temporal Conv2D+1D Residual Network**: Factorized spatial and temporal convolutional blocks preserving spatial subcarrier correlations and motion temporal dynamics.
+* **Temporal Self-Attention Transformers**: Multi-head self-attention layers to model long-range human movement trajectories and complex body interactions.
+* **ArcFace Re-Identification Metric Learning**: Angular margin loss generating normalized 128-dimensional biometric embeddings to prevent target ID swapping during multi-person crossings.
+* **Kinematic Multi-Task Loss**: Smooth L1 3D pose loss with **anatomical bone-length geometric consistency constraints** to prevent limb warping.
+* **Cross-Modal Vision Distillation (Teacher-Student)**: 3D ResNet/OpenPose teacher network distilling visual supervision into the RF student network.
+
+### 4. Multi-Target 3D Tracking & Spatial ROI
+* **3D Constant-Velocity Kalman Filtering**: State estimation predicting target 3D bounding boxes and velocity vectors.
+* **Hungarian / Munkres Algorithm**: Global bipartite matching combining Euclidean spatial distance with ArcFace cosine affinity.
+* **Spatial ROI & Multipath Ghost Filter**: Axis-Aligned Bounding Box (AABB) room boundary filtering to discard out-of-boundary multipath ghost reflections.
+
+### 5. Backend Microservices & Streaming Data Gateway
+* **FastAPI (Async Python ASGI)**: Microsecond-latency REST and WebSocket gateway.
+* **High-Frequency WebSocket Engine**: Real-time bi-directional binary/JSON pipeline streaming 3D keypoints, vitals, and latency telemetry to connected dashboards.
+* **Apache Kafka & Zookeeper (`aiokafka`)**: Distributed event streaming platform buffering high-rate CSI packet topics (`rf.esp32.csi.raw`).
+* **OAuth 2.0 & Bearer JWT Security**: Role-based access control (RBAC) with cryptographic token validation.
+* **Supabase & Cloud Telemetry**: PostgreSQL time-series store for long-term health metrics logging.
+
+### 6. Frontend 3D Engine & Holographic UI/UX
+* **Three.js (WebGL)**: Real-time 3D rendering of volumetric human avatars, glowing joint nodes, neon bone cylinders, bounding boxes, and coordinate laser grid floors.
+* **HTML5 Canvas 2D API**: High-precision 120 Hz chest wall displacement and ECG respiration waveforms.
+* **Tailwind CSS & Glassmorphism**: Futuristic dark HUD theme (`#030712`) with frosted blur backdrops, neon cyan/rose accents, and animated circular radar sweep scope.
+* **OrbitControls**: 360° orbital spatial rotation, pan, and smooth zoom controls.
+* **Typography**: Google Fonts (*Orbitron*, *Space Grotesk*, *JetBrains Mono*).
+
+### 7. DevOps, Cloud & Containerization
+* **Docker & Multi-Stage Builds**: Containerized inference services with CUDA runtime drivers.
+* **Docker Compose**: One-click orchestration of Kafka, Zookeeper, and Inference Gateway.
+* **Kubernetes (`k8s/rf-pose-deployment.yaml`)**: Scalable deployment manifests with `nvidia.com/gpu: 1` resource limits and health probes.
+
+---
+
 ## 🔬 System Architecture & Physical Pipeline
 
 ![RF-Sense3D Technical Architecture](assets/images/rf_pose_architecture_diagram.jpg)
