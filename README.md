@@ -1,5 +1,12 @@
 # RF-Sense3D: Edge-Scalable Through-the-Wall Wi-Fi Sensing System
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python](https://img.shields.io/badge/Python-3.9%2B-3776AB.svg?logo=python&logoColor=white)](https://python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org)
+[![Hardware](https://img.shields.io/badge/Hardware-ESP32%20(802.11%20OFDM)-E7352C.svg?logo=espressif&logoColor=white)](https://espressif.com)
+[![Three.js](https://img.shields.io/badge/WebGL-Three.js%203D-000000.svg?logo=threedotjs&logoColor=white)](https://threejs.org)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20ASGI-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+
 A production-grade, hardware-agnostic architecture for **Passive Through-the-Wall Human Sensing**, **3D Skeleton Reconstruction**, and **Contactless Vital Signs Monitoring** using raw Wi-Fi Channel State Information (CSI) or RF raw payloads, completely bypassing the need for wearable sensors or optical cameras.
 
 > *Inspired by the foundational RF-Pose & RF-Pose3D research principles (Zhao et al., MIT CSAIL).*
@@ -138,13 +145,12 @@ Wi-Fi-Sensing-ESP32-/
 │   └── requirements.txt             # Python Dependencies
 ├── firmware/
 │   ├── transmitter/
-│   │   └── transmitter.ino          # ESP32 Packet Transmitter
 │   └── receiver/
-│       └── receiver.ino             # ESP32 CSI Promiscuous Sniffer
 ├── k8s/
 │   └── rf-pose-deployment.yaml      # Kubernetes GPU Deployment Manifest (nvidia.com/gpu: 1)
 ├── Dockerfile                       # GPU Container Definition
-└── docker-compose.yml               # Kafka, Zookeeper & Inference Orchestration
+├── docker-compose.yml               # Kafka, Zookeeper & Inference Orchestration
+└── LICENSE                          # MIT Open Source License
 ```
 
 ---
@@ -178,3 +184,11 @@ Flash `firmware/transmitter/transmitter.ino` and `firmware/receiver/receiver.ino
 ```bash
 python main.py --bridge --serial-port COM3
 ```
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+Copyright (c) 2026 techindro.
