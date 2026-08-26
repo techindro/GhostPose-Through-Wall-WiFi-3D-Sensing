@@ -1,4 +1,4 @@
-# GhostPose: Edge-Scalable Through-the-Wall Wi-Fi 3D Sensing System
+# GhostPose: Edge-Scalable Through-the-Wall Wi-Fi 3D Sensing System 
 
 A production-grade, hardware-agnostic architecture for **Passive Through-the-Wall Human Sensing**, **3D Skeleton Reconstruction**, and **Contactless Vital Signs Monitoring** using raw Wi-Fi Channel State Information (CSI) or RF raw payloads, completely bypassing the need for wearable sensors or optical cameras.
 
